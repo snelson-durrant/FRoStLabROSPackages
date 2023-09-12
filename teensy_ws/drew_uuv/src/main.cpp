@@ -52,6 +52,11 @@ int thruster_pin = 12;
 int default_pos_servo = 90;
 int default_pos_thruster = 1500;
 
+int prevServo1 = default_pos_servo;
+int prevServo2 = default_pos_servo;
+int prevServo3 = default_pos_servo;
+int prevThruster = default_pos_thruster;
+
 // states for statemachine in loop function
 enum states {
 	WAITING_AGENT,
@@ -107,12 +112,23 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 void subscription_callback(const void * servo_msgin) {
 
 	const frost_interfaces__msg__Nav * servo_msg = (const frost_interfaces__msg__Nav  *)servo_msgin;
-	
-	my_servo1.write(servo_msg->servo1);
-	my_servo2.write(servo_msg->servo2);
-	my_servo3.write(servo_msg->servo3);
-	int thrusterValue = map(servo_msg->thruster, 0, 100, 1500, 2000);
-	thruster.writeMicroseconds(thrusterValue);
+	if(prevServo1 != servo_msg->servo1){
+		my_servo1.write(servo_msg->servo1);
+		prevServo1 = servo_msg->servo1;
+	}
+	if(prevServo2 != servo_msg->servo2){
+		my_servo2.write(servo_msg->servo2);
+		prevServo2 = servo_msg->servo2;
+	}
+	if(prevServo3 != servo_msg->servo3){
+		my_servo3.write(servo_msg->servo3);
+		prevServo3 = servo_msg->servo3;
+	}
+	if(prevThruster != servo_msg->thruster){
+		prevThruster = servo_msg->thruster;
+		int thrusterValue = map(servo_msg->thruster, 0, 100, 1500, 2000);
+		thruster.writeMicroseconds(thrusterValue);
+	}
 }
 
 bool create_entities() {

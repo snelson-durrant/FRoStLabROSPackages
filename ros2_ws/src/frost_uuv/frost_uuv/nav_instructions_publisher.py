@@ -16,6 +16,7 @@ class NavInstructionsPublisher(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.srv = self.create_service(EmergencyStop, 'emergency_stop', self.emergency_stop_callback)
         self.stopped = False
+        self.counter = True
 
     def emergency_stop_callback(self, request, response):
         self.get_logger().info('EMERGENCY STOP EXECUTED')
@@ -28,7 +29,8 @@ class NavInstructionsPublisher(Node):
 
         if not self.stopped:
             # TODO: add fancy navigation function calls here
-            array = nav_logic.navigate()
+            array = nav_logic.navigate(self.counter)
+            self.counter = not self.counter
         else:
             array = [0, 0, 0, 0]
 
