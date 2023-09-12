@@ -107,6 +107,7 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 void subscription_callback(const void * servo_msgin) {
 
 	const frost_interfaces__msg__Nav * servo_msg = (const frost_interfaces__msg__Nav  *)servo_msgin;
+	
 	my_servo1.write(servo_msg->servo1);
 	my_servo2.write(servo_msg->servo2);
 	my_servo3.write(servo_msg->servo3);
