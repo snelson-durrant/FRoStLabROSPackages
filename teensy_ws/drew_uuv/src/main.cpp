@@ -98,13 +98,13 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 	(void) last_call_time;
 	if (timer != NULL) {
 
-		echo_pub.publish();
+		//echo_pub.publish();
 		//voltage_pub.publish();
 		humidity_pub.publish();
 		leak_pub.publish();
 		pressure_pub.publish();
-		gps_pub.publish();
-		imu_pub.publish();
+		//gps_pub.publish();
+		//imu_pub.publish();
 	}
 }
 

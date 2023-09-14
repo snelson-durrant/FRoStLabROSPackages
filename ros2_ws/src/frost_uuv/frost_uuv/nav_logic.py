@@ -3,6 +3,6 @@
 def navigate(counter):
 
     if counter:
-        return [45, 45, 45, 0]
+        return [90, 60, 90, 0]
     else:
-        return [135, 135, 135, 0]
+        return [90, 120, 90, 0]

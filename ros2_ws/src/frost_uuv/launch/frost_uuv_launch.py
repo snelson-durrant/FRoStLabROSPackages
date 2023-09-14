@@ -18,10 +18,10 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='frost_uuv',
             executable='voltage_sub'),
-        launch_ros.actions.Node(
-            package='frost_uuv',
-            executable='humidity_sub'),
-        launch_ros.actions.Node(
-          package='seatrac',
-          executable='modem_data_pub'),
+        # launch_ros.actions.Node(
+        #     package='frost_uuv',
+        #     executable='humidity_sub'),
+        # launch_ros.actions.Node(
+        #   package='seatrac',
+        #   executable='modem_data_pub'),
   ])
