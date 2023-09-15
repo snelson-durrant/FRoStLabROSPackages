@@ -1,0 +1,10 @@
+adafruit/Adafruit BNO08x@^1.2.3
+adafruit/DHT sensor library@^1.4.4
+Wire
+sparkfun/SparkFun u-blox GNSS Arduino Library@^2.2.24
+featherfly/SoftwareSerial@^1.0
+bluerobotics/ping-arduino@^0.1.2
+Servo(teensy41)
+adafruit/Adafruit INA260 Library@^1.5.0
+bluerobotics/BlueRobotics MS5837 Library@^1.1.1
+https://github.com/micro-ROS/micro_ros_platformio
