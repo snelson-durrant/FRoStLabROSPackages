@@ -21,7 +21,8 @@ void setup() {
   //setup_servo;
   //setup_gps;
   //setup_imu();
-  setup_calibrate();
+  setup_humidity_calibrate();
+  setup_pressure_calibrate();
 }
 
 void loop() {
