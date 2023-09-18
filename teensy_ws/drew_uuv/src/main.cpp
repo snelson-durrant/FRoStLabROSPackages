@@ -203,7 +203,7 @@ void destroy_entities() {
 
 void setup() {
 
-	Serial.begin(115200);
+	Serial.begin(6000000);			//Gonna try some new baud rates to see if we can be faster //115200  //3000000  //6000000
 	set_microros_serial_transports(Serial);
 	pin_setup();
 

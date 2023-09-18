@@ -24,9 +24,11 @@ class LeakPub : Publisher {
         void publish() {
         
             bool water_leak = check_water_leak();
-            msg.leak_detected = water_leak;
-            msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-            RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            if(water_leak){
+                msg.leak_detected = water_leak;
+                msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+                RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            }
         }
 
         using Publisher::destroy;    
