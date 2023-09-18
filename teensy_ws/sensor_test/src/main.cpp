@@ -13,7 +13,7 @@
 void setup() {
   Serial.begin(115200);
   delay(2000);
-  setup_hum();
+  //setup_hum();
   //setup_pressure();
   //setup_leak;
   //setup_echo();
@@ -21,10 +21,11 @@ void setup() {
   //setup_servo;
   //setup_gps;
   //setup_imu();
+  setup_calibrate();
 }
 
 void loop() {
-  loop_hum();
+  //loop_hum();
   //loop_pressure();
   //loop_leak;
   //loop_echo();
@@ -32,4 +33,5 @@ void loop() {
   //loop_servo;
   //loop_gps;
   //loop_imu();
+  loop_calibrate();
 }
