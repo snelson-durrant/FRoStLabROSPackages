@@ -4,7 +4,7 @@
 #include <leak_sensor.h>
 #include <echosounder_sensor.h>
 #include <voltage_monitor.h>
-#include <servo_thrsuter.h>
+#include <servo_thruster.h>
 #include <gps.h>
 #include <imu.h>
 

@@ -103,9 +103,8 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 		//voltage_pub.publish();
 		humidity_pub.publish();
 		leak_pub.publish();
-		pressure_pub.publish();
 		//gps_pub.publish();
-		//imu_pub.publish();
+		imu_pub.publish();
 	}
 }
 
@@ -161,7 +160,7 @@ bool create_entities() {
 	"nav_instructions"));
 
 	// create timer (handles periodic publications)
-	const unsigned int timer_timeout = 500;
+	const unsigned int timer_timeout = 10;
 	RCCHECK(rclc_timer_init_default(
 		&timer,
 		&support,
@@ -203,7 +202,7 @@ void destroy_entities() {
 
 void setup() {
 
-	Serial.begin(115200);
+	Serial.begin(6000000);			//Gonna try some new baud rates to see if we can be faster //115200  //3000000  //6000000
 	set_microros_serial_transports(Serial);
 	pin_setup();
 

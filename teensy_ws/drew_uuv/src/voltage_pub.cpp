@@ -2,6 +2,10 @@
 #include <Adafruit_INA260.h>
 #include <frost_interfaces/msg/volt.h>
 
+#define VOLTAGE_WARNING 15
+
+#define VOLTAGE_CRITICAL 13
+
 class VoltagePub : Publisher {
 
     public:
@@ -18,11 +22,13 @@ class VoltagePub : Publisher {
         void publish() {
 
 	        int64_t voltage = ina260.readBusVoltage();
-	        int64_t current = ina260.readCurrent(); 
-	        msg.voltage = voltage;
-	        msg.current = current;
-            msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-            RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+	        int64_t current = ina260.readCurrent();
+            if(voltage < VOLTAGE_WARNING){ 
+                msg.voltage = voltage;
+                msg.current = current;
+                msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+                RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            }
         }
 
         using Publisher::destroy;

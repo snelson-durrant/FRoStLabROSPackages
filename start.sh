@@ -14,7 +14,7 @@ echo ""
 echo -e "\e[38;5;6m()\e[0m CONFIGURING MICROROS AGENT..."
 cd ~/microros_ws
 source install/setup.bash
-ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 &
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -b 6000000 &
 sleep 2
 
 echo ""
