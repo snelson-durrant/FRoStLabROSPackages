@@ -5,8 +5,8 @@
 
 
 //global vars for humidity sensor
-#define DHTPIN 4
-#define DHTTYPE DHT22
+#define DHTPIN 4;
+#define DHTTYPE DHT22;
 DHT dht(DHTPIN, DHTTYPE);
 
 //global var for pressure sensor
@@ -96,3 +96,4 @@ void setup_humidity_calibrate() {
     Serial.print(humidity_on_init);
 
 }
+
