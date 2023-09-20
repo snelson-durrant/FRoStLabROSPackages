@@ -2,15 +2,17 @@
 #include <Wire.h>
 #include "MS5837.h"
 #include <Adafruit_BNO08x.h>
+#include <DHT.h>
+#include <Adafruit_Sensor.h>
 
 
 //global vars for humidity sensor
-#define DHTPIN 4;
-#define DHTTYPE DHT22;
-DHT dht(DHTPIN, DHTTYPE);
+#define DHTPIN2 4
+#define DHTTYPE2 DHT22
+DHT dht2(DHTPIN2, DHTTYPE2);
 
 //global var for pressure sensor
-MS5837 pressure_sensor;
+MS5837 pressure_sensor2;
 //Adafruit_BNO08x bno08x;
 //sh2_SensorValue_t sensorValue;   
 
@@ -34,9 +36,9 @@ void pressure_calibrate() {
     float sum_depth_error_at_zero_depth = 0;
 
     for (int i=0; i<10; i++) {
-        pressure_sensor.read(); //ensures we get a new values each time
-        sum_pressure_at_zero_depth += pressure_sensor.pressure();
-        sum_depth_error_at_zero_depth += pressure_sensor.depth();
+        pressure_sensor2.read(); //ensures we get a new values each time
+        sum_pressure_at_zero_depth += pressure_sensor2.pressure();
+        sum_depth_error_at_zero_depth += pressure_sensor2.depth();
         // delay(60) can add if nessesary. the read function takes ~ 40 ms according to documentation
     }
 
@@ -55,7 +57,7 @@ void humidity_calibrate() {
     
     float sum_humidity_on_init = 0;
     for (int i=0; i<10; i++) {
-        sum_humidity_on_init += dht.readTemperature();
+        sum_humidity_on_init += dht2.readHumidity();
         delay(100);
     }
     humidity_on_init = sum_humidity_on_init * .1;
@@ -70,30 +72,30 @@ void imu_calibrate() {
 void setup_pressure_calibrate() {
 
     Wire2.begin();
-    pressure_sensor.init();
+    pressure_sensor2.init();
 
-    Serial.print("calibrating pressure\n");
+    Serial.println("calibrating pressure");
 
-    pressure_sensor.setFluidDensity(997); // freshwater density kg/m^3
+    pressure_sensor2.setFluidDensity(997); // freshwater density kg/m^3
 
     pressure_calibrate(); 
 
-    Serial.print("pressure calibration complete\n");
+    Serial.println("pressure calibration complete");
     Serial.print("depth error (zero depth): ");
-    Serial.print(depth_error_at_zero_depth);
+    Serial.println(depth_error_at_zero_depth);
     Serial.print("pressure_error_zero_depth: ");
-    Serial.print(pressure_at_zero_depth);
+    Serial.println(pressure_at_zero_depth);
 
 }
 
 void setup_humidity_calibrate() {
-    dht.begin();
+    dht2.begin();
 
     Serial.print("Calibrating humidity sensor");
     humidity_calibrate();
-    Serial.print("humidity calibration complete\n");
+    Serial.println("humidity calibration complete");
     Serial.print("humidity on initialization: ");
-    Serial.print(humidity_on_init);
+    Serial.println(humidity_on_init);
 
 }
 

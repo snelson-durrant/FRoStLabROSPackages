@@ -1,12 +1,13 @@
 #include <Arduino.h>
-#include <humidity_sensor.h>
-#include <pressure_sensor.h>
+// #include <humidity_sensor.h>
+// #include <pressure_sensor.h>
 #include <leak_sensor.h>
 #include <echosounder_sensor.h>
 #include <voltage_monitor.h>
 #include <servo_thruster.h>
 #include <gps.h>
 #include <imu.h>
+#include <calibration.h>
 
 //uncomment the one you want to test. Only one component can be tested at a time 
 
@@ -34,5 +35,4 @@ void loop() {
   //loop_servo;
   //loop_gps;
   //loop_imu();
-  loop_calibrate();
 }
