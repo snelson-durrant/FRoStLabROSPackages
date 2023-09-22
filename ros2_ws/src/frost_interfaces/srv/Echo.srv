@@ -1,4 +1,5 @@
-# MAKE SURE TO MODIFY "Echo.srv" AS WELL
+# MAKE SURE TO MODIFY "Echo.msg" AS WELL
+---
 # time stamp
 std_msgs/Header header
 # measured distance (in mm)
