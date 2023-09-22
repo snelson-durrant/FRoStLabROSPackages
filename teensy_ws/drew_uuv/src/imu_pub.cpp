@@ -59,39 +59,62 @@ class IMUPub : Publisher {
             "imu_data"));
         }
 
+        void imu_update(){
+            if (bno08x.wasReset()) {
+                Serial.print("sensor was reset ");
+                setReports();
+            }
+            if (!bno08x.getSensorEvent(&sensorValue)) {
+                return;
+            }
+
+            switch (sensorValue.sensorId) {
+
+            case SH2_ACCELEROMETER:
+                msg.accel_x=sensorValue.un.accelerometer.x;
+                msg.accel_y=sensorValue.un.accelerometer.y;
+                msg.accel_z=sensorValue.un.accelerometer.z;
+                break;
+            case SH2_GYROSCOPE_CALIBRATED:
+                msg.gyro_x=sensorValue.un.gyroscope.x;
+                msg.gyro_y=sensorValue.un.gyroscope.y;
+                msg.gyro_z=sensorValue.un.gyroscope.z;
+                break;
+            case SH2_MAGNETIC_FIELD_CALIBRATED:
+                msg.mag_x=sensorValue.un.magneticField.x;
+                msg.mag_y=sensorValue.un.magneticField.y;
+                msg.mag_z=sensorValue.un.magneticField.z;
+                break;
+            case SH2_LINEAR_ACCELERATION:
+                msg.lin_accel_x=sensorValue.un.linearAcceleration.x;
+                msg.lin_accel_y=sensorValue.un.linearAcceleration.y;
+                msg.lin_accel_z=sensorValue.un.linearAcceleration.z;
+                break;
+            }
+          
+            // msg.grav_x=sensorValue.un.gravity.x;
+            // msg.grav_y=sensorValue.un.gravity.y;
+            // msg.grav_z=sensorValue.un.gravity.z;
+            // msg.rot_vec_i=sensorValue.un.rotationVector.i;
+            // msg.rot_vec_j=sensorValue.un.rotationVector.j;
+            // msg.rot_vec_k=sensorValue.un.rotationVector.k;
+            // msg.geomag_rot_vec_i=sensorValue.un.geoMagRotationVector.i;
+            // msg.geomag_rot_vec_j=sensorValue.un.geoMagRotationVector.j;
+            // msg.geomag_rot_vec_k=sensorValue.un.geoMagRotationVector.k;
+            // msg.raw_accel_x=sensorValue.un.rawAccelerometer.x;
+            // msg.raw_accel_y=sensorValue.un.rawAccelerometer.y;
+            // msg.raw_accel_z=sensorValue.un.rawAccelerometer.z;
+            // msg.raw_gyro_x=sensorValue.un.rawGyroscope.x;
+            // msg.raw_gyro_y=sensorValue.un.rawGyroscope.y;
+            // msg.raw_gyro_z=sensorValue.un.rawGyroscope.z;
+            // msg.raw_mag_x=sensorValue.un.rawMagnetometer.x;
+            // msg.raw_mag_y=sensorValue.un.rawMagnetometer.y;
+            // msg.raw_mag_z=sensorValue.un.rawMagnetometer.z;
+        }
+        
         void publish() {
 
-            bno08x.getSensorEvent(&sensorValue);
-            msg.accel_x=sensorValue.un.accelerometer.x;
-            msg.accel_y=sensorValue.un.accelerometer.y;
-            msg.accel_z=sensorValue.un.accelerometer.z;
-            msg.gyro_x=sensorValue.un.gyroscope.x;
-            msg.gyro_y=sensorValue.un.gyroscope.y;
-            msg.gyro_z=sensorValue.un.gyroscope.z;
-            msg.mag_x=sensorValue.un.magneticField.x;
-            msg.mag_y=sensorValue.un.magneticField.y;
-            msg.mag_z=sensorValue.un.magneticField.z;
-            msg.lin_accel_x=sensorValue.un.linearAcceleration.x;
-            msg.lin_accel_y=sensorValue.un.linearAcceleration.y;
-            msg.lin_accel_z=sensorValue.un.linearAcceleration.z;
-            msg.grav_x=sensorValue.un.gravity.x;
-            msg.grav_y=sensorValue.un.gravity.y;
-            msg.grav_z=sensorValue.un.gravity.z;
-            msg.rot_vec_i=sensorValue.un.rotationVector.i;
-            msg.rot_vec_j=sensorValue.un.rotationVector.j;
-            msg.rot_vec_k=sensorValue.un.rotationVector.k;
-            msg.geomag_rot_vec_i=sensorValue.un.geoMagRotationVector.i;
-            msg.geomag_rot_vec_j=sensorValue.un.geoMagRotationVector.j;
-            msg.geomag_rot_vec_k=sensorValue.un.geoMagRotationVector.k;
-            msg.raw_accel_x=sensorValue.un.rawAccelerometer.x;
-            msg.raw_accel_y=sensorValue.un.rawAccelerometer.y;
-            msg.raw_accel_z=sensorValue.un.rawAccelerometer.z;
-            msg.raw_gyro_x=sensorValue.un.rawGyroscope.x;
-            msg.raw_gyro_y=sensorValue.un.rawGyroscope.y;
-            msg.raw_gyro_z=sensorValue.un.rawGyroscope.z;
-            msg.raw_mag_x=sensorValue.un.rawMagnetometer.x;
-            msg.raw_mag_y=sensorValue.un.rawMagnetometer.y;
-            msg.raw_mag_z=sensorValue.un.rawMagnetometer.z;
+            
             
             msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
             RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));

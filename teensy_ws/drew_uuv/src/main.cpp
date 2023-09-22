@@ -226,6 +226,7 @@ void loop() {
 			EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
 			if (state == AGENT_CONNECTED) {
 				// these micro-ROS functions are responsible for processing limited number of pending tasks in the executor's que  
+				imu_pub.imu_update();
 				RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100))); 
 				RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100))); 
 			}
