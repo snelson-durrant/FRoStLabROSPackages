@@ -8,16 +8,22 @@ class GPSPub : Publisher
 {
 
     public:
-        void setup(rcl_node_t node) 
+        void setup(rcl_node_t node, rcl_allocator_t allocator, rclc_support_t support) 
         {
             gps_serial.begin(9600);
             GNSS.begin(gps_serial);
+
             
-           RCCHECK(rclc_publisher_init_default(
-            &publisher,
+            RCCEHCK(rclc_service_init_best_effort(
+            &gps_srv,
             &node,
-            ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, GPS),
-            "gps_data"));
+            ROSIDL_GET_SRV_TYPE_SUPPORT(frost_interfaces, srv, GetGPS),
+            "gps_service"));
+
+            // create Service executor (responds to requests with data to micro-ROS service)
+	        RCSOFTCHECK(rclc_executor_init(&srv_executor, &support.context, 1, &allocator));
+            RCSOFTCHECK(rclc_executor_add_service(&srvexecutor, &gps_srv, &msg_request, &msg, gps_service_callback);)
+
         }
 
         void publish() 
@@ -27,10 +33,15 @@ class GPSPub : Publisher
             msg.altitude = GNSS.getAltitude();
             msg.siv= GNSS.getSIV();
             msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-            RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            //RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
         }
-
-        using Publisher::destroy;
+        void destroy(rcl_node_t node){
+            rcl_service_fini(&gps_srv, &node);
+            rclc_executor_fini(&srv_executor);
+        }
+        void spin_gps_executor(){
+            RCSOFTCHECK(rclc_executor_spin_some(&srv_executor, RCL_MS_TO_NS(100)));
+        }
       
    private:
 
@@ -39,6 +50,14 @@ class GPSPub : Publisher
     SoftwareSerial gps_serial = SoftwareSerial(RXPin, TXPin);
     SFE_UBLOX_GNSS GNSS;
 
-    frost_interfaces__msg__GPS msg;
+    rclc_executor_t srv_executor;
+    rcl_service_t gps_srv;
+
+    frost_interfaces__srv__GetGPS_Response msg;
+    frost_interfaces__srv__GetGPS_Request msg_request;
+
+    void gps_service_callback(const void * request_msg, void * response_msg){
+	    publish();
+    }
 
 };

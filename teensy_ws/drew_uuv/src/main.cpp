@@ -8,7 +8,6 @@
 
 #include <frost_interfaces/msg/nav.h>
 #include <Servo.h>
-//hello clayton
 
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
@@ -27,6 +26,7 @@ rcl_node_t node;
 rclc_executor_t pub_executor;
 rcl_subscription_t subscriber;
 rclc_executor_t sub_executor;
+
 rcl_timer_t timer;
 frost_interfaces__msg__Nav msg;
 
@@ -38,6 +38,12 @@ LeakPub leak_pub;
 PressurePub pressure_pub;
 GPSPub gps_pub;
 IMUPub imu_pub;
+
+// service objects
+
+//const char * service_name = "gps_service"; //put directly into function
+//const rosidl_message_type_support_t * type_support = ROSIDL_GET_SRV_TYPE_SUPPORT(frost_interfaces, srv, GetGPS)
+//TODO: list objects from class
 
 // servo, thruster variables
 Servo my_servo1;
@@ -149,8 +155,12 @@ bool create_entities() {
 	humidity_pub.setup(node);
 	leak_pub.setup(node);
 	pressure_pub.setup(node);
-	gps_pub.setup(node);
 	imu_pub.setup(node);
+
+	// Initialize Services
+	gps_pub.setup(node, allocator, support);
+
+	//TODO: Init services from class
 
 	// create subscribers
 	RCCHECK(rclc_subscription_init_default(
@@ -171,6 +181,7 @@ bool create_entities() {
 	RCSOFTCHECK(rclc_executor_init(&pub_executor, &support.context, 1, &allocator));
 	RCSOFTCHECK(rclc_executor_add_timer(&pub_executor, &timer));
 
+
 	// create subscriber executor (recieves data from micro_ros topics)
 	RCSOFTCHECK(rclc_executor_init(&sub_executor, &support.context, 1, &allocator));
 	RCSOFTCHECK(rclc_executor_add_subscription(&sub_executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
@@ -188,9 +199,11 @@ void destroy_entities() {
 	humidity_pub.destroy(node);
 	leak_pub.destroy(node);
 	pressure_pub.destroy(node);
-	gps_pub.destroy(node);
 	imu_pub.destroy(node);
 
+	//destroy services
+	gps_pub.destroy(node);
+	
 	// destroy everything else
 	rcl_subscription_fini(&subscriber, &node);
 	rcl_timer_fini(&timer);
@@ -228,7 +241,8 @@ void loop() {
 				// these micro-ROS functions are responsible for processing limited number of pending tasks in the executor's que  
 				imu_pub.imu_update();
 				RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100))); 
-				RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100))); 
+				RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
+				gps_pub.spin_gps_executor(); 
 			}
 			break;
 		case AGENT_DISCONNECTED:
