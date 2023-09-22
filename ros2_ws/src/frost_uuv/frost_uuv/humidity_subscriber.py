@@ -1,25 +1,22 @@
 import rclpy
 from rclpy.node import Node
+from frost_interfaces.srv import EmergencyStop
+from frost_interfaces.msg import Humid
 
-from std_msgs.msg import String
-from frost_interfaces.srv import EmergencyStop, Humid
+SERVICE_TIMEOUT = 1  # seconds
+QOS_PROFILE = 10
 
 
 class HumiditySubscriber(Node):
-
     def __init__(self):
-        super().__init__('humidity_subscriber')
+        super().__init__("humidity_subscriber")
         self.subscription = self.create_subscription(
-            Humid,
-            'humidity',
-            self.listener_callback,
-            10)
+            Humid, "humidity", self.listener_callback, QOS_PROFILE
+        )
         self.subscription  # prevent unused variable warning
-        self.cli = self.create_client(
-                EmergencyStop, 
-                'emergency_stop')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('EmergencyStop service not available, waiting...')
+        self.cli = self.create_client(EmergencyStop, "emergency_stop")
+        while not self.cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
+            self.get_logger().info("EmergencyStop service not available, waiting...")
         self.req = EmergencyStop.Request()
 
     def send_request(self, err):
@@ -29,12 +26,8 @@ class HumiditySubscriber(Node):
         return self.future.result()
 
     def listener_callback(self, msg):
-        if msg.humidity > 60:
-            error = "ERROR: High Humidity"
-            request = String()
-            request.data = error
-            self.get_logger().info(error)
-            self.send_request(request)
+        error = "ERROR: High Humidity (" + msg.humidity + ")"
+        self.send_request(error)
 
 
 def main(args=None):
@@ -51,5 +44,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

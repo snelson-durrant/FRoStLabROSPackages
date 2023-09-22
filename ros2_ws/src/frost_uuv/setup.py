@@ -23,12 +23,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'nav_instructions_pub = frost_uuv.nav_instructions_publisher:main',
-            'echo_data_pub = frost_uuv.echo_data_publisher:main',
+            'controller = frost_uuv.controller:main',
             'leak_detected_sub = frost_uuv.leak_detected_subscriber:main',
             'voltage_sub = frost_uuv.voltage_subscriber:main',
             'humidity_sub = frost_uuv.humidity_subscriber:main',
-            'gps_data_pub = frost_uuv.gps_data_publisher:main',
         ],
     },
 )
