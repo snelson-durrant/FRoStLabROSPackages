@@ -1,49 +1,64 @@
 import rclpy
 from rclpy.node import Node
+from enum import Enum
 
 from frost_interfaces.msg import Nav
 from frost_interfaces.srv import EmergencyStop
 
 import frost_uuv.nav_logic as nav_logic
 
-NAV_PUB_TIMER_PERIOD = 1 #seconds
+NAV_PUB_TIMER_PERIOD = 1  # seconds
+SERVO1_POS = 0
+SERVO2_POS = 1
+SERVO3_POS = 2
+THRUSTER_POS = 3
+AUV_STOPPED = [0, 0, 0, 0]
+
+
+class States(Enum):
+    RUN = 1
+    STOP = 2
 
 
 class NavInstructionsPublisher(Node):
-
     def __init__(self):
-        super().__init__('nav_instructions_publisher')
-        self.publisher_ = self.create_publisher(Nav, 'nav_instructions', 10)
+        super().__init__("nav_instructions_publisher")
+        self.publisher_ = self.create_publisher(Nav, "nav_instructions")
         timer_period = NAV_PUB_TIMER_PERIOD
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.srv = self.create_service(EmergencyStop, 'emergency_stop', self.emergency_stop_callback)
-        self.stopped = False
+        self.srv = self.create_service(
+            EmergencyStop, "emergency_stop", self.emergency_stop_callback
+        )
+        self.state = States.RUN
         self.counter = True
 
     def emergency_stop_callback(self, request, response):
-        self.get_logger().info('EMERGENCY STOP EXECUTED')
+        self.get_logger().info("EMERGENCY STOP EXECUTED")
+        self.get_logger().info(request.err)
+        self.state = States.STOP
         response.stopped = True
-        self.stopped = True
         return response
 
     def timer_callback(self):
         msg = Nav()
 
-        if not self.stopped:
-            # TODO: add fancy navigation function calls here
+        if self.state == States.RUN:
+            # TODO: add controller code here
             array = nav_logic.navigate(self.counter)
             self.counter = not self.counter
-        else:
-            array = [0, 0, 0, 0]
+
+        elif self.state == States.STOP:
+            array = AUV_STOPPED
 
         msg.header.stamp = Node.get_clock(self).now().to_msg()
-        msg.servo1 = array[0]
-        msg.servo2 = array[1]
-        msg.servo3 = array[2]
-        msg.thruster = array[3]
+        msg.servo1 = array[SERVO1_POS]
+        msg.servo2 = array[SERVO2_POS]
+        msg.servo3 = array[SERVO3_POS]
+        msg.thruster = array[THRUSTER_POS]
         self.get_logger().info(
-            'Servos (%d, %d, %d), Thruster (%d)'
-            % (msg.servo1, msg.servo2, msg.servo3, msg.thruster))
+            "Servos (%d, %d, %d), Thruster (%d)"
+            % (msg.servo1, msg.servo2, msg.servo3, msg.thruster)
+        )
         self.publisher_.publish(msg)
 
 
@@ -61,5 +76,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
