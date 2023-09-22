@@ -29,10 +29,12 @@ class HumidityPub : Publisher {
         
             float humidity = dht.readHumidity();
             float temperature = dht.readTemperature(true);
-            msg.humidity = humidity;
-            msg.temp = temperature;
-            msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-            RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            if(humidity > humidity_threshold){
+                msg.humidity = humidity;
+                msg.temp = temperature;
+                msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+                RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+            }
         }
 
         using Publisher::destroy;
@@ -40,7 +42,6 @@ class HumidityPub : Publisher {
    private:
 
         DHT dht = DHT(DHTPIN, DHTTYPE);
-        
 
         frost_interfaces__msg__Humid msg;
 
