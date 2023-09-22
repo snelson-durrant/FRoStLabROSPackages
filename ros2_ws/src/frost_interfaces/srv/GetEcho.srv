@@ -1,4 +1,5 @@
 # MAKE SURE TO MODIFY "Echo.msg" AS WELL
+bool test
 ---
 # time stamp
 std_msgs/Header header
