@@ -1,4 +1,5 @@
-# MAKE SURE TO MODIFY "GPS.src" AS WELL
+# MAKE SURE TO MODIFY "GPS.msg" AS WELL
+---
 # time stamp
 std_msgs/Header header
 # longitude

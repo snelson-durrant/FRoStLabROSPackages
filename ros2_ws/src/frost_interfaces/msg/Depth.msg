@@ -6,5 +6,3 @@ float64 pressure
 float64 depth 
 # temperature
 float64 temperature
-
-# test
