@@ -6,13 +6,15 @@ from frost_interfaces.srv import EmergencyStop
 
 import frost_uuv.nav_logic as nav_logic
 
+NAV_PUB_TIMER_PERIOD = 1 #seconds
+
 
 class NavInstructionsPublisher(Node):
 
     def __init__(self):
         super().__init__('nav_instructions_publisher')
         self.publisher_ = self.create_publisher(Nav, 'nav_instructions', 10)
-        timer_period = 1  # seconds
+        timer_period = NAV_PUB_TIMER_PERIOD
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.srv = self.create_service(EmergencyStop, 'emergency_stop', self.emergency_stop_callback)
         self.stopped = False
