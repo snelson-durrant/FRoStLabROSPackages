@@ -3,7 +3,8 @@
 #include <humidity_pub.cpp>
 #include <leak_pub.cpp>
 #include <pressure_pub.cpp>
-#include <gps_pub.h>
+// #include <gps_pub.h>
+#include<gps_service.cpp>
 #include <imu_pub.cpp>
 
 #include <frost_interfaces/msg/nav.h>
@@ -40,7 +41,8 @@ PressurePub pressure_pub;
 IMUPub imu_pub;
 
 //TODO: list service objects from class
-GPSPub gps_pub;
+// GPSPub gps_pub;
+GPS_srv gps_pub;
 
 // servo, thruster variables
 Servo my_servo1;
@@ -177,7 +179,7 @@ bool create_entities() {
 
 	//Service executor
 	RCSOFTCHECK(rclc_executor_init(&srv_executor, &support.context, 1, &allocator)); //this line wasn't in the code
-	RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_pub.gps_srv, &msg_request, &msgRes, gps_service_callback));
+	RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_pub.service, &gps_pub.msg_request, &gps_pub.msgRes, gps_pub.gps_service_callback));
 
 	// create subscriber executor (recieves data from micro_ros topics)
 	RCSOFTCHECK(rclc_executor_init(&sub_executor, &support.context, 1, &allocator));
@@ -240,7 +242,7 @@ void loop() {
 				imu_pub.imu_update();
 				RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100)));  //TODO: Should look at this to see if it is affecting timing
 				RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
-				RCSOFTCHECK(rclc_executor_spin_some(&srv_executor), RCL_MS_TO_NS(100));
+				RCSOFTCHECK(rclc_executor_spin_some(&srv_executor, RCL_MS_TO_NS(100)));
 			}
 			break;
 		case AGENT_DISCONNECTED:
