@@ -157,7 +157,7 @@ bool create_entities() {
 	imu_pub.setup(node);
 
 	RCSOFTCHECK(rclc_executor_init(&gps_pub.srv_executor, &support.context, 1, &allocator)); //this line wasn't in the code
-	RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_srv, &msg_request, &msgRes, gps_service_callback));
+	RCSOFTCHECK(rclc_executor_add_service(&gps_pub.srv_executor, &gps_pub.gps_srv, &msg_request, &msgRes, gps_service_callback));
 	// Initialize Services
 	gps_pub.setup(node);
 	//TODO: Init services from class
@@ -242,7 +242,7 @@ void loop() {
 				//RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100)));  //TODO: Should look at this to see if it is affecting timing
 				//RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
 				// gps_pub.spin_gps_executor(); 
-				RCSOFTCHECK(rclc_executor_spin(&srv_executor));
+				RCSOFTCHECK(rclc_executor_spin(&gps_pub.srv_executor));
 			}
 			break;
 		case AGENT_DISCONNECTED:

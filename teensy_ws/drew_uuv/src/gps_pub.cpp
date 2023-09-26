@@ -32,7 +32,7 @@ void gps_service_callback(const void * request_msg, void * response_msg){
     res_in->latitude = GNSS.getLatitude();
     res_in->altitude = GNSS.getAltitude();
     res_in->siv= GNSS.getSIV();
-    //res_in->header.stamp.nanosec = rmw_uros_epoch_nanos();
+    res_in->header.stamp.nanosec = rmw_uros_epoch_nanos();
     
     // msgRes.longitude = GNSS.getLongitude();
     // msgRes.latitude = GNSS.getLatitude();
