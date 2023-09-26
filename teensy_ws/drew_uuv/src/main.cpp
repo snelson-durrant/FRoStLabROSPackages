@@ -3,7 +3,7 @@
 #include <humidity_pub.cpp>
 #include <leak_pub.cpp>
 #include <pressure_pub.cpp>
-#include <gps_pub.cpp>
+#include <gps_pub.h>
 #include <imu_pub.cpp>
 
 #include <frost_interfaces/msg/nav.h>
@@ -148,7 +148,6 @@ bool create_entities() {
 	// synchronize timestamps with the Raspberry Pi
 	// after sync, timing should be able to be accessed with "rmw_uros_epoch" functions
 	RCCHECK(rmw_uros_sync_session(1000));
-
 	// create publishers
 	echo_pub.setup(node);
 	voltage_pub.setup(node);
@@ -157,11 +156,11 @@ bool create_entities() {
 	pressure_pub.setup(node);
 	imu_pub.setup(node);
 
+	RCSOFTCHECK(rclc_executor_init(&gps_pub.srv_executor, &support.context, 1, &allocator)); //this line wasn't in the code
+	RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_srv, &msg_request, &msgRes, gps_service_callback));
 	// Initialize Services
-	gps_pub.setup(node, allocator, support);
-
+	gps_pub.setup(node);
 	//TODO: Init services from class
-
 	// create subscribers
 	RCCHECK(rclc_subscription_init_default(
 	&subscriber,
@@ -239,10 +238,11 @@ void loop() {
 			EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
 			if (state == AGENT_CONNECTED) {
 				// these micro-ROS functions are responsible for processing limited number of pending tasks in the executor's que  
-				imu_pub.imu_update();
-				RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100))); 
-				RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
-				gps_pub.spin_gps_executor(); 
+				//imu_pub.imu_update();
+				//RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100)));  //TODO: Should look at this to see if it is affecting timing
+				//RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
+				// gps_pub.spin_gps_executor(); 
+				RCSOFTCHECK(rclc_executor_spin(&srv_executor));
 			}
 			break;
 		case AGENT_DISCONNECTED:
