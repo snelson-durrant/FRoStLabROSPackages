@@ -13,8 +13,9 @@ DHT dht2(DHTPIN2, DHTTYPE2);
 
 //global var for pressure sensor
 MS5837 pressure_sensor2;
-//Adafruit_BNO08x bno08x;
-//sh2_SensorValue_t sensorValue;   
+
+Adafruit_BNO08x bno08x;
+sh2_SensorValue_t sensorValue;   
 
 
 /*
@@ -64,10 +65,6 @@ void humidity_calibrate() {
 
 }
 
-void imu_calibrate() {
-
-}
-
 
 void setup_pressure_calibrate() {
 
@@ -98,4 +95,50 @@ void setup_humidity_calibrate() {
     Serial.println(humidity_on_init);
 
 }
+
+void setup_imu_calibrate() {
+    Serial.println("Calibrating IMU");
+    Serial.println("Sys\tgyro\taccel\tmag");
+    bno08x.begin_I2C();
+
+    bool calibration_completed = false;
+
+    uint8_t system, gyro, accel, mag;
+    system = gyro = accel = mag = 0;
+
+    uint8_t threshold = 3; //calibrations from 0-3 where three is the best
+    //calibration will exit when all levels are above threshold
+
+    while (!calibration_completed) {
+        bno08x.getCalibration(&system, &gyro, &accel, &mag);
+        Serial.print(system);
+        Serial.print("\t");
+        Serial.print(gyro);
+        Serial.print("\t");
+        Serial.print(accel);
+        Serial.print("\t");
+        Serial.println(mag);
+
+        if(gyro>=threshold & accel>=threshold & mag>=threshold) {
+            calibration_completed = True
+        }
+    }
+
+    System.println("IMU Calibration Completed")
+
+}
+
+
+
+// void loop_imu_calibrate() {
+//     bool calibration_completed = false;
+
+//     uint8_t system, gyro, accel, mag;
+//     system = gyro = accel = mag = 0;
+//     bno08x.getCalibration(&system, &gyro, &accel, &mag)
+//     System.print("Sys\tGyro\t")
+
+//     Serial.print();
+//     return calibration_completed
+// }
 

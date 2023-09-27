@@ -24,6 +24,7 @@ void setup() {
   //setup_imu();
   setup_humidity_calibrate();
   setup_pressure_calibrate();
+  setup_imu_calibrate();
 }
 
 void loop() {
