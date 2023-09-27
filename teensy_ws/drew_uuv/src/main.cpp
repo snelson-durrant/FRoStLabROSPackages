@@ -1,4 +1,4 @@
-#include <echo_pub.cpp>
+#include <echo_srv.cpp>
 #include <gps_srv.cpp>
 #include <humidity_pub.cpp>
 #include <imu_pub.cpp>
@@ -38,7 +38,6 @@ rcl_timer_t timer;
 frost_interfaces__msg__Nav msg;
 
 // publisher objects
-EchoPub echo_pub;
 VoltagePub voltage_pub;
 HumidityPub humidity_pub;
 LeakPub leak_pub;
@@ -47,6 +46,7 @@ IMUPub imu_pub;
 
 // GPSPub gps_pub;
 GPSSrv gps_srv;
+EchoSrv echo_srv;
 
 // servo, thruster variables
 Servo my_servo1;
@@ -107,17 +107,21 @@ void gps_service_callback(const void *request_msg, void *response_msg) {
   gps_srv.respond(request_msg, response_msg);
 }
 
+// "fake function" to allow the service object function to be called
+void echo_service_callback(const void *request_msg, void *response_msg) {
+  echo_srv.respond(request_msg, response_msg);
+}
+
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
   (void)last_call_time;
   if (timer != NULL) {
 
-    // echo_pub.publish();
     // voltage_pub.publish();
     humidity_pub.publish();
     leak_pub.publish();
-    // gps_pub.publish();
+    // pressure_pub.publish();
     imu_pub.publish();
   }
 }
@@ -162,7 +166,6 @@ bool create_entities() {
   RCCHECK(rmw_uros_sync_session(1000));
 
   // create publishers
-  echo_pub.setup(node);
   voltage_pub.setup(node);
   humidity_pub.setup(node);
   leak_pub.setup(node);
@@ -171,6 +174,7 @@ bool create_entities() {
 
   // create services
   gps_srv.setup(node);
+  echo_srv.setup(node);
 
   // create subscribers
   RCCHECK(rclc_subscription_init_default(
@@ -194,6 +198,11 @@ bool create_entities() {
   RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_srv.service,
                                         &gps_srv.msgReq, &gps_srv.msgRes,
                                         gps_service_callback));
+  RCSOFTCHECK(
+      rclc_executor_init(&srv_executor, &support.context, 1, &allocator));
+  RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &echo_srv.service,
+                                        &echo_srv.msgReq, &echo_srv.msgRes,
+                                        echo_service_callback));
 
   // create subscriber executor (recieves data from micro-ROS topics)
   RCSOFTCHECK(
@@ -209,7 +218,6 @@ void destroy_entities() {
   (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
 
   // destroy publishers
-  echo_pub.destroy(node);
   voltage_pub.destroy(node);
   humidity_pub.destroy(node);
   leak_pub.destroy(node);
@@ -218,15 +226,16 @@ void destroy_entities() {
 
   // destroy services
   gps_srv.destroy(node);
+  echo_srv.destroy(node);
 
   // destroy everything else
-  rcl_subscription_fini(&subscriber, &node);
-  rcl_timer_fini(&timer);
-  rclc_executor_fini(&sub_executor);
-  rclc_executor_fini(&pub_executor);
-  rclc_executor_fini(&srv_executor);
-  rcl_node_fini(&node);
-  rclc_support_fini(&support);
+  RCCHECK(rcl_subscription_fini(&subscriber, &node));
+  RCCHECK(rcl_timer_fini(&timer));
+  RCCHECK(rclc_executor_fini(&sub_executor));
+  RCCHECK(rclc_executor_fini(&pub_executor));
+  RCCHECK(rclc_executor_fini(&srv_executor));
+  RCCHECK(rcl_node_fini(&node));
+  RCCHECK(rclc_support_fini(&support));
 }
 
 void setup() {

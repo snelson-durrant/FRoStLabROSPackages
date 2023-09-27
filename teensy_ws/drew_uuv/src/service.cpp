@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <rcl/rcl.h>
@@ -21,13 +22,10 @@
 class Service {
 
 public:
-  rcl_service_t service;
-
   // these need to be defined by each service
   virtual void setup(rcl_node_t node) = 0;
   virtual void respond(const void *request_msg, void *response_msg) = 0;
-
-  void destroy(rcl_node_t node) { rcl_service_fini(&service, &node); }
+  virtual void destroy(rcl_node_t node) = 0;
 
 protected:
   void error_loop() {

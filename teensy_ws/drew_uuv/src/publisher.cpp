@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <rcl/rcl.h>
@@ -25,7 +26,7 @@ public:
   virtual void setup(rcl_node_t node) = 0;
   virtual void publish() = 0;
 
-  void destroy(rcl_node_t node) { rcl_publisher_fini(&publisher, &node); }
+  void destroy(rcl_node_t node) { RCCHECK(rcl_publisher_fini(&publisher, &node)); }
 
 protected:
   rcl_publisher_t publisher;

@@ -5,6 +5,7 @@
 
 class GPSSrv : Service {
 public:
+  rcl_service_t service;
   frost_interfaces__srv__GetGPS_Response msgRes;
   frost_interfaces__srv__GetGPS_Request msgReq;
 
@@ -12,15 +13,14 @@ public:
     gps_serial.begin(9600);
     GNSS.begin(gps_serial);
 
-    RCCHECK(rclc_service_init(
+    RCCHECK(rclc_service_init_best_effort(
         &service, &node,
         ROSIDL_GET_SRV_TYPE_SUPPORT(frost_interfaces, srv, GetGPS),
-        "gps_service", 10));
+        "gps_service"));
+      
   }
 
   void respond(const void *request_msg, void *response_msg) {
-    frost_interfaces__srv__GetGPS_Request *req_in =
-        (frost_interfaces__srv__GetGPS_Request *)request_msg;
     frost_interfaces__srv__GetGPS_Response *res_in =
         (frost_interfaces__srv__GetGPS_Response *)response_msg;
 
@@ -31,8 +31,9 @@ public:
     res_in->header.stamp.nanosec = rmw_uros_epoch_nanos();
   }
 
-  using Service::destroy;
-  using Service::service;
+  virtual void destroy(rcl_node_t node) { 
+    RCCHECK(rcl_service_fini(&service, &node));
+  }
 
 private:
   static const uint8_t RXPin = 28;
