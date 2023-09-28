@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PUBLISHER
+#define PUBLISHER
+
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <rcl/rcl.h>
@@ -37,3 +39,5 @@ protected:
     }
   }
 };
+
+#endif // PUBLISHER

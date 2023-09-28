@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SERVICE
+#define SERVICE
+
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <rcl/rcl.h>
@@ -34,3 +36,5 @@ protected:
     }
   }
 };
+
+#endif // SERVICE
