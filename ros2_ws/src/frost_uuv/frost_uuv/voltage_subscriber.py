@@ -26,7 +26,7 @@ class VoltageSubscriber(Node):
         return self.future.result()
 
     def listener_callback(self, msg):
-        error = "ERROR: Low Voltage (" + msg.voltage + ")"
+        error = "ERROR: Low Voltage (" + str(msg.voltage) + ")"
         self.send_request(error)
 
 

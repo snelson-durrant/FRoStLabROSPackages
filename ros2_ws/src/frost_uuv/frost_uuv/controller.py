@@ -7,6 +7,8 @@ from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 NAV_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
 QOS_PROFILE = 10
+DEFAULT_SERVO = (90, 90, 90) # out of 180
+DEFAULT_THRUSTER = 0 # out of 100
 
 
 class States(Enum):
@@ -52,10 +54,8 @@ class Controller(Node):
 
         # Set initial variables
         self.state = States.RUN
-        self.prev_servo1 = 90
-        self.prev_servo2 = 90
-        self.prev_servo3 = 90
-        self.prev_thruster = 0
+        self.prev_servo1, self.prev_servo2, self.prev_servo3 = DEFAULT_SERVO
+        self.prev_thruster = DEFAULT_THRUSTER
         self.current_imu = 0
         self.current_depth = 0
 
@@ -96,16 +96,18 @@ class Controller(Node):
             # current_gps = self.future.result()
             # TODO: publish data
 
-            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = 90
-            nav_msg.thruster = 0
+            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
+            nav_msg.thruster = DEFAULT_THRUSTER
+
+            self.get_logger().info("PUBLISHING TO NAV_INSTRUCTIONS")
 
             ########################################
             # CONTROLLER CODE ENDS HERE
             ########################################
 
         elif self.state == States.STOP:
-            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = 90
-            nav_msg.thruster = 0
+            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
+            nav_msg.thruster = DEFAULT_THRUSTER
 
         # Only publish the new nav_instructions values if they change
         if (
