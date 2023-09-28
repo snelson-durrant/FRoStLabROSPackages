@@ -9,9 +9,9 @@
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>
 
-#if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
-#error This example is only avaliable for Arduino framework with serial transport.
-#endif
+#define NUM_SERVICES 2
+#define NUM_TIMERS 1
+#define NUM_SUBSCRIBERS 1
 
 #define EXECUTE_EVERY_N_MS(MS, X)                                              \
   do {                                                                         \
@@ -189,24 +189,22 @@ bool create_entities() {
 
   // create publisher executor (sends data to micro-ROS topics)
   RCSOFTCHECK(
-      rclc_executor_init(&pub_executor, &support.context, 1, &allocator));
+      rclc_executor_init(&pub_executor, &support.context, NUM_TIMERS, &allocator));
   RCSOFTCHECK(rclc_executor_add_timer(&pub_executor, &timer));
 
   // create service executor
   RCSOFTCHECK(
-      rclc_executor_init(&srv_executor, &support.context, 1, &allocator));
+      rclc_executor_init(&srv_executor, &support.context, NUM_SERVICES, &allocator));
   RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_srv.service,
                                         &gps_srv.msgReq, &gps_srv.msgRes,
                                         gps_service_callback));
-  RCSOFTCHECK(
-      rclc_executor_init(&srv_executor, &support.context, 1, &allocator));
   RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &echo_srv.service,
                                         &echo_srv.msgReq, &echo_srv.msgRes,
                                         echo_service_callback));
 
   // create subscriber executor (recieves data from micro-ROS topics)
   RCSOFTCHECK(
-      rclc_executor_init(&sub_executor, &support.context, 1, &allocator));
+      rclc_executor_init(&sub_executor, &support.context, NUM_SUBSCRIBERS, &allocator));
   RCSOFTCHECK(rclc_executor_add_subscription(
       &sub_executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
