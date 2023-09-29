@@ -69,11 +69,9 @@ class Controller(Node):
         self.echo_cli = self.create_client(GetEcho, "echo_service", callback_group=self.aux_callback_group)
         while not self.echo_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("Echo service not available, waiting...")
-        self.echo_req = GetEcho.Request()
         self.gps_cli = self.create_client(GetGPS, "gps_service", callback_group=self.aux_callback_group)
         while not self.gps_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("GPS service not available, waiting...")
-        self.gps_req = GetGPS.Request()
 
         # Set initial variables
         self.state = States.RUN
@@ -126,44 +124,51 @@ class Controller(Node):
         self.state = States.STOP
         response.stopped = True
         return response
+    
+    # Gets the echo data from the echo service and publishes it
+    def get_echo(self):
+        echo_msg = Echo()
 
+        self.echo_future = self.echo_cli.call_async(ECHO_REQ)
+        while not self.echo_future.done():
+            pass
+        current_echo = self.echo_future.result()
+
+        echo_msg.header = current_echo.header
+        echo_msg.distance = current_echo.distance
+        echo_msg.conf_level = current_echo.conf_level
+        echo_msg.profile_data = current_echo.profile_data
+        self.echo_publisher.publish(echo_msg)
+    
+    # Gets the gps data from the gps service and publishes it
+    def get_gps(self):
+        gps_msg = GPS()
+
+        self.gps_future = self.gps_cli.call_async(GPS_REQ)
+        while not self.gps_future.done():
+            pass
+        current_gps = self.gps_future.result()
+        
+        gps_msg.header = current_gps.header
+        gps_msg.latitude = current_gps.latitude
+        gps_msg.longitude = current_gps.longitude
+        gps_msg.altitude = current_gps.altitude
+        gps_msg.siv = current_gps.siv
+        self.gps_publisher.publish(gps_msg)
+    
     # Runs the state machine and controller, publishes to nav_instructions
     def timer_callback(self):
         nav_msg = Nav()
-        gps_msg = GPS()
-        echo_msg = Echo()
 
         if self.state == States.RUN:
             ########################################
             # CONTROLLER CODE STARTS HERE
             ########################################
 
-            self.echo_future = self.echo_cli.call_async(ECHO_REQ)
-            while not self.echo_future.done():
-                pass
-            current_echo = self.echo_future.result()
-
-            echo_msg.header = current_echo.header
-            echo_msg.distance = current_echo.distance
-            echo_msg.conf_level = current_echo.conf_level
-            echo_msg.profile_data = current_echo.profile_data
-            self.echo_publisher.publish(echo_msg)
-
+            self.get_echo()
             self.get_logger().info("TESTED ECHO SERVICE")
 
-            self.gps_future = self.gps_cli.call_async(GPS_REQ)
-            while not self.gps_future.done():
-                pass
-            current_echo = self.gps_future.result()
-            current_gps = self.gps_future.result()
-
-            gps_msg.header = current_gps.header
-            gps_msg.latitude = current_gps.latitude
-            gps_msg.longitude = current_gps.longitude
-            gps_msg.altitude = current_gps.altitude
-            gps_msg.siv = current_gps.siv
-            self.gps_publisher.publish(gps_msg)
-
+            self.get_gps()
             self.get_logger().info("TESTED GPS SERVICE")
 
             nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO

@@ -44,7 +44,7 @@ LeakPub leak_pub;
 PressurePub pressure_pub;
 IMUPub imu_pub;
 
-// GPSPub gps_pub;
+// service objects
 GPSSrv gps_srv;
 EchoSrv echo_srv;
 
