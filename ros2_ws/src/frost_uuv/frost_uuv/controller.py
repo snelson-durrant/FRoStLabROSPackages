@@ -222,8 +222,6 @@ def main(args=None):
     finally:
         rclpy.shutdown()
 
-    # TODO: look into destructions here
-
 
 if __name__ == "__main__":
     main()
