@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <Adafruit_INA260.h>
+#include <Wire.h>
 
 Adafruit_INA260 ina260 = Adafruit_INA260();
 int64_t voltage;
 int64_t current;
 
 void setup_voltage() {
-
+    ina260.begin(INA260_I2CADDR_DEFAULT, &Wire2);
 }
 
 void loop_voltage() {
