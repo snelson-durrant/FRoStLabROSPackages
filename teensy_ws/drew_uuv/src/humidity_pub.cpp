@@ -1,11 +1,15 @@
+#include "publisher.cpp"
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <frost_interfaces/msg/humid.h>
-#include <publisher.cpp>
 #include <std_msgs/msg/int64_multi_array.h>
 
 #define DHTPIN 4
 #define DHTTYPE DHT22
+#define HUMID_THRES 10.0
+#define AVG_COUNT 10
+#define AVG_DEC 0.1
+#define AVG_DELAY 10
 
 class HumidityPub : Publisher {
 
@@ -25,7 +29,7 @@ public:
 
     float humidity = dht.readHumidity() - humidity_on_init;
     float temperature = dht.readTemperature(true);
-    if (humidity > humidity_threshold) {
+    if (humidity > HUMID_THRES) {
       msg.humidity = humidity;
       msg.temp = temperature;
       msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
@@ -37,19 +41,17 @@ public:
 
 private:
   DHT dht = DHT(DHTPIN, DHTTYPE);
+  float humidity_on_init;
 
   frost_interfaces__msg__Humid msg;
-
-  double humidity_threshold = 10.00;
-  float humidity_on_init;
 
   void humidity_calibrate() {
 
     float sum_humidity_on_init = 0;
-    for (unsigned int i = 0; i < 10; i++) {
+    for (unsigned int i = 0; i < AVG_COUNT; i++) {
       sum_humidity_on_init += dht.readHumidity();
-      delay(100);
+      delay(AVG_DELAY);
     }
-    humidity_on_init = sum_humidity_on_init * .1;
+    humidity_on_init = sum_humidity_on_init * AVG_DEC;
   }
 };

@@ -1,7 +1,11 @@
-#include <service.cpp>
+#include "service.cpp"
 #include <SoftwareSerial.h>
 #include <ping1d.h>
 #include <frost_interfaces/srv/get_echo.h>
+
+#define ECHO_RATE 115200
+#define RX_PIN 21
+#define TX_PIN 20
 
 class EchoSrv : Service {
 public:
@@ -10,7 +14,7 @@ public:
   frost_interfaces__srv__GetEcho_Request msgReq;
 
   void setup(rcl_node_t node) {
-    ping_serial.begin(115200);
+    ping_serial.begin(ECHO_RATE);
 
     RCCHECK(rclc_service_init_best_effort(
         &service, &node,
@@ -33,8 +37,6 @@ public:
   }
 
 private:
-  static const uint8_t arduino_RxPin = 21;
-  static const uint8_t arduino_TxPin = 20;
-  SoftwareSerial ping_serial = SoftwareSerial(arduino_RxPin, arduino_TxPin);
+  SoftwareSerial ping_serial = SoftwareSerial(RX_PIN, TX_PIN);
   Ping1D ping{ping_serial};
 };

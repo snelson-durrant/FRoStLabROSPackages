@@ -1,13 +1,17 @@
+#include "publisher.cpp"
 #include <SoftwareSerial.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <frost_interfaces/msg/gps.h>
-#include <publisher.cpp>
+
+#define GPS_RATE 9600
+#define RX_PIN 28
+#define TX_PIN 29
 
 class GPSPub : Publisher {
 
 public:
   void setup(rcl_node_t node) {
-    gps_serial.begin(9600);
+    gps_serial.begin(GPS_RATE);
     GNSS.begin(gps_serial);
 
     RCCHECK(rclc_publisher_init_default(
@@ -27,9 +31,7 @@ public:
   using Publisher::destroy;
 
 private:
-  static const uint8_t RXPin = 28;
-  static const uint8_t TXPin = 29;
-  SoftwareSerial gps_serial = SoftwareSerial(RXPin, TXPin);
+  SoftwareSerial gps_serial = SoftwareSerial(RX_PIN, TX_PIN);
   SFE_UBLOX_GNSS GNSS;
 
   frost_interfaces__msg__GPS msg;

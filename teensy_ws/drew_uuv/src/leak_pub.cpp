@@ -1,16 +1,15 @@
+#include "publisher.cpp"
 #include <frost_interfaces/msg/leak.h>
-#include <publisher.cpp>
 #include <std_msgs/msg/bool.h>
 
-// #define led_pin 13
-#define leak_pin 16
+#define LEAK_PIN 16
 
 class LeakPub : Publisher {
 
 public:
   void setup(rcl_node_t node) {
 
-    pinMode(leak_pin, INPUT);
+    pinMode(LEAK_PIN, INPUT);
 
     RCCHECK(rclc_publisher_init_default(
         &publisher, &node,

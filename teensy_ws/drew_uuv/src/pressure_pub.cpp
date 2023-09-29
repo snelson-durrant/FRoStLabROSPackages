@@ -1,8 +1,12 @@
+#include "publisher.cpp"
 #include <MS5837.h>
 #include <Wire.h>
 #include <frost_interfaces/msg/depth.h>
-#include <publisher.cpp>
 #include <std_msgs/msg/float64.h>
+
+#define AVG_COUNT 10
+#define AVG_DEC 0.1
+#define AVG_DELAY 60
 
 class PressurePub : Publisher {
 
@@ -49,16 +53,15 @@ private:
     float sum_pressure_at_zero_depth = 0;
     float sum_depth_error_at_zero_depth = 0;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < AVG_COUNT; i++) {
       pressure_sensor.read();
       sum_pressure_at_zero_depth += pressure_sensor.pressure();
       sum_depth_error_at_zero_depth += pressure_sensor.depth();
-      // delay(60)
-      // the read function takes ~ 40 ms according to documentation
+      delay(AVG_DELAY) // the read function takes ~ 40 ms according to documentation
     }
 
-    pressure_at_zero_depth = sum_pressure_at_zero_depth * .1;
-    depth_error_at_zero_depth = sum_depth_error_at_zero_depth * .1;
+    pressure_at_zero_depth = sum_pressure_at_zero_depth * AVG_DEC;
+    depth_error_at_zero_depth = sum_depth_error_at_zero_depth * AVG_DEC;
   }
 
   frost_interfaces__msg__Depth msg;

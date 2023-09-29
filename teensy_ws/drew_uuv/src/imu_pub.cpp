@@ -57,7 +57,6 @@ public:
 
   void imu_update() {
     if (bno08x.wasReset()) {
-      Serial.print("sensor was reset ");
       setReports();
     }
     if (!bno08x.getSensorEvent(&sensorValue)) {
@@ -65,7 +64,6 @@ public:
     }
 
     switch (sensorValue.sensorId) {
-
     case SH2_ACCELEROMETER:
       msg.accel_x = sensorValue.un.accelerometer.x;
       msg.accel_y = sensorValue.un.accelerometer.y;

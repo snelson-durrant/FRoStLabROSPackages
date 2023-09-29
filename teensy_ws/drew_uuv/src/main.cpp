@@ -1,15 +1,13 @@
-#include <echo_srv.cpp>
-#include <gps_srv.cpp>
-#include <humidity_pub.cpp>
-#include <imu_pub.cpp>
-#include <leak_pub.cpp>
-#include <pressure_pub.cpp>
-#include <voltage_pub.cpp>
+#include "echo_srv.cpp"
+#include "gps_srv.cpp"
+#include "humidity_pub.cpp"
+#include "imu_pub.cpp"
+#include "leak_pub.cpp"
+#include "pressure_pub.cpp"
+#include "voltage_pub.cpp"
 
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>
-
-#define CALLBACK_TOTAL 5
 
 #define EXECUTE_EVERY_N_MS(MS, X)                                              \
   do {                                                                         \
@@ -23,13 +21,29 @@
     }                                                                          \
   } while (0)
 
+#define BAUD_RATE 6000000
+#define CALLBACK_TOTAL 5
+#define TIMER_PERIOD 10
+#define SYNC_TIMEOUT 1000
+
+#define LOW_FINAL 0
+#define HIGH_FINAL 100
+#define LOW_INITIAL 1500
+#define HIGH_INITIAL 2000
+
+#define SERVO_PIN1 9
+#define SERVO_PIN2 10
+#define SERVO_PIN3 11
+#define THRUSTER_PIN 12
+#define DEFAULT_SERVO 90
+#define DEFAULT_THRUSTER 1500
+
 // micro-ROS objects
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
 rclc_executor_t executor;
 rcl_subscription_t subscriber;
-
 rcl_timer_t timer;
 frost_interfaces__msg__Nav msg;
 
@@ -50,19 +64,6 @@ Servo my_servo2;
 Servo my_servo3;
 Servo thruster;
 
-// servo, thruster pins and default values;
-int servo_pin1 = 9;
-int servo_pin2 = 10;
-int servo_pin3 = 11;
-int thruster_pin = 12;
-int default_pos_servo = 90;
-int default_pos_thruster = 1500;
-
-int prevServo1 = default_pos_servo;
-int prevServo2 = default_pos_servo;
-int prevServo3 = default_pos_servo;
-int prevThruster = default_pos_thruster;
-
 // states for statemachine in loop function
 enum states {
   WAITING_AGENT,
@@ -81,20 +82,20 @@ void error_loop() {
 // pin setup for servos and thruster
 void pin_setup() {
 
-  pinMode(servo_pin1, OUTPUT);
-  pinMode(servo_pin2, OUTPUT);
-  pinMode(servo_pin3, OUTPUT);
-  pinMode(thruster_pin, OUTPUT);
+  pinMode(SERVO_PIN1, OUTPUT);
+  pinMode(SERVO_PIN2, OUTPUT);
+  pinMode(SERVO_PIN3, OUTPUT);
+  pinMode(THRUSTER_PIN, OUTPUT);
 
-  my_servo1.attach(servo_pin1);
-  my_servo2.attach(servo_pin2);
-  my_servo3.attach(servo_pin3);
-  thruster.attach(thruster_pin);
+  my_servo1.attach(SERVO_PIN1);
+  my_servo2.attach(SERVO_PIN2);
+  my_servo3.attach(SERVO_PIN3);
+  thruster.attach(THRUSTER_PIN);
 
-  my_servo1.write(default_pos_servo);
-  my_servo2.write(default_pos_servo);
-  my_servo3.write(default_pos_servo);
-  thruster.writeMicroseconds(default_pos_thruster);
+  my_servo1.write(DEFAULT_SERVO);
+  my_servo2.write(DEFAULT_SERVO);
+  my_servo3.write(DEFAULT_SERVO);
+  thruster.writeMicroseconds(DEFAULT_THRUSTER);
 }
 
 // "fake function" to allow the service object function to be called
@@ -128,23 +129,11 @@ void subscription_callback(const void *servo_msgin) {
 
   const frost_interfaces__msg__Nav *servo_msg =
       (const frost_interfaces__msg__Nav *)servo_msgin;
-  if (prevServo1 != servo_msg->servo1) {
-    my_servo1.write(servo_msg->servo1);
-    prevServo1 = servo_msg->servo1;
-  }
-  if (prevServo2 != servo_msg->servo2) {
-    my_servo2.write(servo_msg->servo2);
-    prevServo2 = servo_msg->servo2;
-  }
-  if (prevServo3 != servo_msg->servo3) {
-    my_servo3.write(servo_msg->servo3);
-    prevServo3 = servo_msg->servo3;
-  }
-  if (prevThruster != servo_msg->thruster) {
-    prevThruster = servo_msg->thruster;
-    int thrusterValue = map(servo_msg->thruster, 0, 100, 1500, 2000);
-    thruster.writeMicroseconds(thrusterValue);
-  }
+  my_servo1.write(servo_msg->servo1);
+  my_servo2.write(servo_msg->servo2);
+  my_servo3.write(servo_msg->servo3);
+  int thrusterValue = map(servo_msg->thruster, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
+  thruster.writeMicroseconds(thrusterValue);
 }
 
 bool create_entities() {
@@ -180,23 +169,21 @@ bool create_entities() {
       "nav_instructions"));
 
   // create timer (handles periodic publications)
-  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(10),
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(TIMER_PERIOD),
                                   timer_callback));
 
-  // create publisher
+  // create executor
   RCSOFTCHECK(
       rclc_executor_init(&executor, &support.context, CALLBACK_TOTAL, &allocator));
-  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  // create services
+  // add callbacks to executor
+  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
   RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
                                         &gps_srv.msgReq, &gps_srv.msgRes,
                                         gps_service_callback));
   RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
                                         &echo_srv.msgReq, &echo_srv.msgRes,
                                         echo_service_callback));
-
-  // create subscription
   RCSOFTCHECK(rclc_executor_add_subscription(
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
@@ -228,7 +215,7 @@ void destroy_entities() {
 
 void setup() {
 
-  Serial.begin(6000000);
+  Serial.begin(BAUD_RATE);
   set_microros_serial_transports(Serial);
   pin_setup();
 

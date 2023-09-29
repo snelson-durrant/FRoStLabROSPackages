@@ -1,14 +1,18 @@
+#include "publisher.cpp"
 #include <SoftwareSerial.h>
 #include <frost_interfaces/msg/echo.h>
 #include <ping1d.h>
-#include <publisher.cpp>
+
+#define ECHO_RATE 115200
+#define RX_PIN 21
+#define TX_PIN 20
 
 class EchoPub : Publisher {
 
 public:
   void setup(rcl_node_t node) {
 
-    ping_serial.begin(115200);
+    ping_serial.begin(ECHO_RATE);
 
     RCCHECK(rclc_publisher_init_default(
         &publisher, &node,
@@ -28,9 +32,7 @@ public:
   using Publisher::destroy;
 
 private:
-  static const uint8_t arduino_RxPin = 21;
-  static const uint8_t arduino_TxPin = 20;
-  SoftwareSerial ping_serial = SoftwareSerial(arduino_RxPin, arduino_TxPin);
+  SoftwareSerial ping_serial = SoftwareSerial(RX_PIN, TX_PIN);
   Ping1D ping{ping_serial};
 
   frost_interfaces__msg__Echo msg;
