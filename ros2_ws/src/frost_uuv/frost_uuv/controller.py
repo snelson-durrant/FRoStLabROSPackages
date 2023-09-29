@@ -219,6 +219,8 @@ def main(args=None):
     controller.destroy_node()
     rclpy.shutdown()
 
+    # TODO: look into destructions here
+
 
 if __name__ == "__main__":
     main()
