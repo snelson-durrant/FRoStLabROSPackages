@@ -9,6 +9,8 @@ SERVICE_TIMEOUT = 1  # seconds
 QOS_PROFILE = 10
 DEFAULT_SERVO = (90, 90, 90)  # out of 180
 DEFAULT_THRUSTER = 0  # out of 100
+ECHO_REQ = GetEcho.Request()
+GPS_REQ = GetGPS.Request()
 
 
 class States(Enum):
@@ -21,33 +23,54 @@ class Controller(Node):
     def __init__(self):
         super().__init__("controller")
 
+        # Create the callback groups
+        # main_callback_group - functions outside of the timer callback loop
+        # aux_callback_group - functions inside of the timer callback loop
+        self.main_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        self.aux_callback_group = rclpy.callback_groups.ReentrantCallbackGroup()
+
         # Create the publishers
-        self.nav_publisher = self.create_publisher(Nav, "nav_instructions", QOS_PROFILE)
-        self.echo_publisher = self.create_publisher(Echo, "echo_data", QOS_PROFILE)
-        self.gps_publisher = self.create_publisher(GPS, "gps_data", QOS_PROFILE)
-        self.timer = self.create_timer(NAV_PUB_TIMER_PERIOD, self.timer_callback)
+        self.nav_publisher = self.create_publisher(Nav, "nav_instructions", QOS_PROFILE, callback_group=self.main_callback_group)
+        self.echo_publisher = self.create_publisher(Echo, "echo_data", QOS_PROFILE, callback_group=self.aux_callback_group)
+        self.gps_publisher = self.create_publisher(GPS, "gps_data", QOS_PROFILE, callback_group=self.aux_callback_group)
+        self.timer = self.create_timer(
+            NAV_PUB_TIMER_PERIOD, 
+            self.timer_callback, 
+            callback_group=self.main_callback_group
+        )
 
         # Create the subscriptions
         self.imu_subscription = self.create_subscription(
-            IMU, "imu_data", self.imu_listener_callback, QOS_PROFILE
+            IMU,
+            "imu_data",
+            self.imu_listener_callback,
+            QOS_PROFILE,
+            callback_group=self.main_callback_group,
         )
         self.imu_subscription  # prevent unused variable warning
         self.depth_subscription = self.create_subscription(
-            Depth, "depth_data", self.depth_listener_callback, QOS_PROFILE
+            Depth,
+            "depth_data",
+            self.depth_listener_callback,
+            QOS_PROFILE,
+            callback_group=self.main_callback_group,
         )
         self.depth_subscription  # prevent unused variable warning
 
         # Create the services
         self.srv = self.create_service(
-            EmergencyStop, "emergency_stop", self.emergency_stop_callback
+            EmergencyStop,
+            "emergency_stop",
+            self.emergency_stop_callback,
+            callback_group=self.main_callback_group,
         )
 
         # Create the clients
-        self.echo_cli = self.create_client(GetEcho, "echo_service")
+        self.echo_cli = self.create_client(GetEcho, "echo_service", callback_group=self.aux_callback_group)
         while not self.echo_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("Echo service not available, waiting...")
         self.echo_req = GetEcho.Request()
-        self.gps_cli = self.create_client(GetGPS, "gps_service")
+        self.gps_cli = self.create_client(GetGPS, "gps_service", callback_group=self.aux_callback_group)
         while not self.gps_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("GPS service not available, waiting...")
         self.gps_req = GetGPS.Request()
@@ -110,22 +133,16 @@ class Controller(Node):
         gps_msg = GPS()
         echo_msg = Echo()
 
-        # Do we need this?
-        self.gps_req = GetGPS.Request()
-        self.echo_req = GetEcho.Request()
-        self.gps_req.test = True
-        self.echo_req.test = True
-
         if self.state == States.RUN:
             ########################################
             # CONTROLLER CODE STARTS HERE
             ########################################
 
-            self.get_logger().info("STUCK HERE")
-    
-            self.future = self.echo_cli.call_async(self.echo_req)
-            rclpy.spin_until_future_complete(self, self.future)
-            current_echo = self.future.result()
+            self.echo_future = self.echo_cli.call_async(ECHO_REQ)
+            while not self.echo_future.done():
+                pass
+            current_echo = self.echo_future.result()
+
             echo_msg.header = current_echo.header
             echo_msg.distance = current_echo.distance
             echo_msg.conf_level = current_echo.conf_level
@@ -134,9 +151,12 @@ class Controller(Node):
 
             self.get_logger().info("TESTED ECHO SERVICE")
 
-            self.future = self.gps_cli.call_async(self.gps_req)
-            rclpy.spin_until_future_complete(self, self.future)
-            current_gps = self.future.result()
+            self.gps_future = self.gps_cli.call_async(GPS_REQ)
+            while not self.gps_future.done():
+                pass
+            current_echo = self.gps_future.result()
+            current_gps = self.gps_future.result()
+
             gps_msg.header = current_gps.header
             gps_msg.latitude = current_gps.latitude
             gps_msg.longitude = current_gps.longitude
@@ -182,9 +202,11 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
+    executor = rclpy.executors.MultiThreadedExecutor()
     controller = Controller()
+    executor.add_node(controller)
 
-    rclpy.spin(controller)
+    executor.spin()
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
