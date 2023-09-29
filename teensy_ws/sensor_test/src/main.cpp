@@ -22,9 +22,10 @@ void setup() {
   //setup_servo;
   //setup_gps;
   //setup_imu();
-  setup_humidity_calibrate();
-  setup_pressure_calibrate();
-  setup_imu_calibrate();
+  // setup_humidity_calibrate();
+  // setup_pressure_calibrate();
+  // setup_imu_calibrate();
+  setup_voltage_calibrate();
 }
 
 void loop() {
@@ -36,4 +37,5 @@ void loop() {
   //loop_servo;
   //loop_gps;
   //loop_imu();
+  loop_voltage_calibration();
 }

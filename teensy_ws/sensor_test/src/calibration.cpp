@@ -114,6 +114,18 @@ void setup_voltage_calibrate() {
     Serial.println("voltage calibration complete")
 }
 
+void loop_voltage_calibration() {
+  // measure and print current, voltage, and power to display on the serial plotter
+  Serial.print(ina260.readCurrent());
+  Serial.print(" ");
+  Serial.print(ina260.readBusVoltage());
+  Serial.print(" ");
+  Serial.print(ina260.readPower());
+  Serial.println();
+ 
+  delay(125); // Delay for a period of time (in milliseconds).
+}
+
 void setup_imu_calibrate() {
     Serial.println("Calibrating IMU");
     Serial.println("Sys\tgyro\taccel\tmag");
