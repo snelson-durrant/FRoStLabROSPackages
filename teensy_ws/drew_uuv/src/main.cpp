@@ -227,13 +227,13 @@ void destroy_entities() {
   echo_srv.destroy(node);
 
   // destroy everything else
-  RCCHECK(rcl_subscription_fini(&subscriber, &node));
-  RCCHECK(rcl_timer_fini(&timer));
-  RCCHECK(rclc_executor_fini(&sub_executor));
-  RCCHECK(rclc_executor_fini(&pub_executor));
-  RCCHECK(rclc_executor_fini(&srv_executor));
-  RCCHECK(rcl_node_fini(&node));
-  RCCHECK(rclc_support_fini(&support));
+  rcl_subscription_fini(&subscriber, &node);
+  rcl_timer_fini(&timer);
+  rclc_executor_fini(&sub_executor);
+  rclc_executor_fini(&pub_executor);
+  rclc_executor_fini(&srv_executor);
+  rcl_node_fini(&node);
+  rclc_support_fini(&support);
 }
 
 void setup() {
