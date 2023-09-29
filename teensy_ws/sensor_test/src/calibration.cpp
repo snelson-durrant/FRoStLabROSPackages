@@ -5,6 +5,7 @@
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_INA260.h>
+#include <Wire.h>
 
 //global vars for humidity sensor
 #define DHTPIN2 4
@@ -14,10 +15,10 @@ DHT dht2(DHTPIN2, DHTTYPE2);
 //global var for pressure sensor
 MS5837 pressure_sensor2;
 
-Adafruit_INA260 ina260 = Adafruit_INA260();
+Adafruit_INA260 ina260_2 = Adafruit_INA260();
 
-Adafruit_BNO08x bno08x;
-sh2_SensorValue_t sensorValue;   
+Adafruit_BNO08x bno08x_2_2;
+sh2_SensorValue_t sensorValue_2;   
 
 
 
@@ -103,60 +104,60 @@ void setup_humidity_calibrate() {
 void setup_voltage_calibrate() {
     Serial.println("Calibrating voltage sensor");
     
-    ina260.begin();
+    ina260_2.begin(INA260_I2CADDR_DEFAULT, &Wire2);
 
     // set the number of samples to average
-    ina260.setAveragingCount(INA260_COUNT_16);
+    ina260_2.setAveragingCount(INA260_COUNT_16);
     // set the time over which to measure the current and bus voltage
-    ina260.setVoltageConversionTime(INA260_TIME_140_us);
-    ina260.setCurrentConversionTime(INA260_TIME_140_us);
+    ina260_2.setVoltageConversionTime(INA260_TIME_140_us);
+    ina260_2.setCurrentConversionTime(INA260_TIME_140_us);
 
-    Serial.println("voltage calibration complete")
+    Serial.println("voltage calibration complete");
 }
 
 void loop_voltage_calibration() {
   // measure and print current, voltage, and power to display on the serial plotter
-  Serial.print(ina260.readCurrent());
+  Serial.print(ina260_2.readCurrent());
   Serial.print(" ");
-  Serial.print(ina260.readBusVoltage());
+  Serial.print(ina260_2.readBusVoltage());
   Serial.print(" ");
-  Serial.print(ina260.readPower());
+  Serial.print(ina260_2.readPower());
   Serial.println();
  
   delay(125); // Delay for a period of time (in milliseconds).
 }
 
-void setup_imu_calibrate() {
-    Serial.println("Calibrating IMU");
-    Serial.println("Sys\tgyro\taccel\tmag");
-    bno08x.begin_I2C();
+// void setup_imu_calibrate() {
+//     Serial.println("Calibrating IMU");
+//     Serial.println("Sys\tgyro\taccel\tmag");
+//     bno08x_2.begin_I2C();
 
-    bool calibration_completed = false;
+//     bool calibration_completed = false;
 
-    uint8_t system, gyro, accel, mag;
-    system = gyro = accel = mag = 0;
+//     uint8_t system, gyro, accel, mag;
+//     system = gyro = accel = mag = 0;
 
-    uint8_t threshold = 3; //calibrations from 0-3 where three is the best
-    //calibration will exit when all levels are above threshold
+//     uint8_t threshold = 3; //calibrations from 0-3 where three is the best
+//     //calibration will exit when all levels are above threshold
 
-    while (!calibration_completed) {
-        bno08x.getCalibration(&system, &gyro, &accel, &mag);
-        Serial.print(system);
-        Serial.print("\t");
-        Serial.print(gyro);
-        Serial.print("\t");
-        Serial.print(accel);
-        Serial.print("\t");
-        Serial.println(mag);
+//     while (!calibration_completed) {
+//         bno08x_2.getCalibration(&system, &gyro, &accel, &mag);
+//         Serial.print(system);
+//         Serial.print("\t");
+//         Serial.print(gyro);
+//         Serial.print("\t");
+//         Serial.print(accel);
+//         Serial.print("\t");
+//         Serial.println(mag);
 
-        if(gyro>=threshold & accel>=threshold & mag>=threshold) {
-            calibration_completed = true;
-        }
+//         if(gyro>=threshold & accel>=threshold & mag>=threshold) {
+//             calibration_completed = true;
+//         }
 
-        delay(250);
-    }
+//         delay(250);
+//     }
 
-    System.println("IMU Calibration Complete")
+//     Serial.println("IMU Calibration Complete")
 
-}
+// }
 

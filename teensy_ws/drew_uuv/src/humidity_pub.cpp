@@ -27,7 +27,7 @@ class HumidityPub : Publisher {
 
         void publish() {
         
-            float humidity = dht.readHumidity();
+            float humidity = dht.readHumidity() - humidity_on_init;
             float temperature = dht.readTemperature(true);
             msg.humidity = humidity;
             msg.temp = temperature;
@@ -44,10 +44,17 @@ class HumidityPub : Publisher {
 
         frost_interfaces__msg__Humid msg;
 
-        double humidity_threshold = 50.00;
-
-        void humidity_calibrate(){
-            //Clayton put code here to measure humidity
-            //@ClaytonSmith
+        double humidity_threshold = 10.00;
+        float humidity_on_init;
+        void humidity_calibrate() {
+    
+            float sum_humidity_on_init = 0;
+            for (int i=0; i<10; i++) {
+                sum_humidity_on_init += dht.readHumidity();
+                delay(100);
+            }
+            humidity_on_init = sum_humidity_on_init * .1;
         }
+
+    
 };

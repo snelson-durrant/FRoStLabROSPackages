@@ -17,6 +17,14 @@ class VoltagePub : Publisher {
             &node,
             ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Volt),
             "voltage"));
+
+                        // set the number of samples to average
+            ina260.setAveragingCount(INA260_COUNT_16);
+            // set the time over which to measure the current and bus voltage
+            ina260.setVoltageConversionTime(INA260_TIME_140_us);
+            ina260.setCurrentConversionTime(INA260_TIME_140_us);
+
+            Serial.println("voltage calibration complete");
         }
 
         void publish() {

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-// #include <humidity_sensor.h>
+#include <humidity_sensor.h>
 // #include <pressure_sensor.h>
 #include <leak_sensor.h>
 #include <echosounder_sensor.h>
@@ -14,7 +14,7 @@
 void setup() {
   Serial.begin(115200);
   delay(2000);
-  //setup_hum();
+  setup_hum();
   //setup_pressure();
   //setup_leak;
   //setup_echo();
@@ -22,14 +22,14 @@ void setup() {
   //setup_servo;
   //setup_gps;
   //setup_imu();
-  // setup_humidity_calibrate();
+  //setup_humidity_calibrate();
   // setup_pressure_calibrate();
   // setup_imu_calibrate();
-  setup_voltage_calibrate();
+  //setup_voltage_calibrate();
 }
 
 void loop() {
-  //loop_hum();
+  loop_hum();
   //loop_pressure();
   //loop_leak;
   //loop_echo();
@@ -37,5 +37,5 @@ void loop() {
   //loop_servo;
   //loop_gps;
   //loop_imu();
-  loop_voltage_calibration();
+  //loop_voltage_calibration();
 }
