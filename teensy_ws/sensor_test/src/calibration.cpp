@@ -4,7 +4,7 @@
 #include <Adafruit_BNO08x.h>
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
-
+#include <Adafruit_INA260.h>
 
 //global vars for humidity sensor
 #define DHTPIN2 4
@@ -14,8 +14,11 @@ DHT dht2(DHTPIN2, DHTTYPE2);
 //global var for pressure sensor
 MS5837 pressure_sensor2;
 
+Adafruit_INA260 ina260 = Adafruit_INA260();
+
 Adafruit_BNO08x bno08x;
 sh2_SensorValue_t sensorValue;   
+
 
 
 /*
@@ -88,12 +91,39 @@ void setup_pressure_calibrate() {
 void setup_humidity_calibrate() {
     dht2.begin();
 
-    Serial.print("Calibrating humidity sensor");
+    Serial.println("Calibrating humidity sensor");
     humidity_calibrate();
     Serial.println("humidity calibration complete");
     Serial.print("humidity on initialization: ");
     Serial.println(humidity_on_init);
 
+}
+
+//https://github.com/adafruit/Adafruit_INA260/blob/master/examples/ina260_tuning/ina260_tuning.ino
+void setup_voltage_calibrate() {
+    Serial.println("Calibrating voltage sensor");
+    
+    ina260.begin();
+
+    // set the number of samples to average
+    ina260.setAveragingCount(INA260_COUNT_16);
+    // set the time over which to measure the current and bus voltage
+    ina260.setVoltageConversionTime(INA260_TIME_140_us);
+    ina260.setCurrentConversionTime(INA260_TIME_140_us);
+
+    Serial.println("voltage calibration complete")
+}
+
+void loop_voltage_calibration() {
+  // measure and print current, voltage, and power to display on the serial plotter
+  Serial.print(ina260.readCurrent());
+  Serial.print(" ");
+  Serial.print(ina260.readBusVoltage());
+  Serial.print(" ");
+  Serial.print(ina260.readPower());
+  Serial.println();
+ 
+  delay(125); // Delay for a period of time (in milliseconds).
 }
 
 void setup_imu_calibrate() {
@@ -120,25 +150,13 @@ void setup_imu_calibrate() {
         Serial.println(mag);
 
         if(gyro>=threshold & accel>=threshold & mag>=threshold) {
-            calibration_completed = True
+            calibration_completed = true;
         }
+
+        delay(250);
     }
 
-    System.println("IMU Calibration Completed")
+    System.println("IMU Calibration Complete")
 
 }
-
-
-
-// void loop_imu_calibrate() {
-//     bool calibration_completed = false;
-
-//     uint8_t system, gyro, accel, mag;
-//     system = gyro = accel = mag = 0;
-//     bno08x.getCalibration(&system, &gyro, &accel, &mag)
-//     System.print("Sys\tGyro\t")
-
-//     Serial.print();
-//     return calibration_completed
-// }
 
