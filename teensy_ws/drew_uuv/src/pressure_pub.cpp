@@ -12,7 +12,7 @@ public:
     Wire2.begin();
     pressure_sensor.init();
 
-    pressure_sensor.setFluidDensity(997);
+    pressure_calibrate();
 
     RCCHECK(rclc_publisher_init_default(
         &publisher, &node,
@@ -23,8 +23,8 @@ public:
   void publish() {
 
     pressure_sensor.read();
-    msg.pressure = pressure_sensor.pressure();
-    msg.depth = pressure_sensor.depth();
+    msg.pressure = pressure_sensor.pressure(); // - pressure_at_zero_depth
+    msg.depth = pressure_sensor.depth() - depth_error_at_zero_depth;
     msg.temperature = pressure_sensor.temperature();
     msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
@@ -36,7 +36,30 @@ private:
   float pressure;
   float depth;
   float temperature;
+
+  float pressure_at_zero_depth;
+  float depth_error_at_zero_depth;
+
   MS5837 pressure_sensor;
+
+  void pressure_calibrate() {
+
+    pressure_sensor.setFluidDensity(997);
+
+    float sum_pressure_at_zero_depth = 0;
+    float sum_depth_error_at_zero_depth = 0;
+
+    for (int i = 0; i < 10; i++) {
+      pressure_sensor2.read();
+      sum_pressure_at_zero_depth += pressure_sensor2.pressure();
+      sum_depth_error_at_zero_depth += pressure_sensor2.depth();
+      // delay(60)
+      // the read function takes ~ 40 ms according to documentation
+    }
+
+    pressure_at_zero_depth = sum_pressure_at_zero_depth * .1;
+    depth_error_at_zero_depth = sum_depth_error_at_zero_depth * .1;
+  }
 
   frost_interfaces__msg__Depth msg;
 };
