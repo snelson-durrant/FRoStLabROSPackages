@@ -216,7 +216,6 @@ void destroy_entities() {
 void setup() {
 
   Serial.begin(BAUD_RATE);
-  set_microros_serial_transports(Serial);
   pin_setup();
 
   state = WAITING_AGENT;

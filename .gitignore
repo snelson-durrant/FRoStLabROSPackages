@@ -13,6 +13,7 @@
 !/teensy_ws/drew_uuv/platformio.ini
 !/teensy_ws/drew_uuv/custom.meta
 !/teensy_ws/drew_uuv/src/
+!/teensy_ws/drew_uuv/extra_packages/
 !/teensy_ws/drew_uuv/.pio/
 !/teensy_ws/sensor_test/
 /teensy_ws/sensor_test/*
