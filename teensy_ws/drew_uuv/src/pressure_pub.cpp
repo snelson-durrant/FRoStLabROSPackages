@@ -50,9 +50,9 @@ private:
     float sum_depth_error_at_zero_depth = 0;
 
     for (int i = 0; i < 10; i++) {
-      pressure_sensor2.read();
-      sum_pressure_at_zero_depth += pressure_sensor2.pressure();
-      sum_depth_error_at_zero_depth += pressure_sensor2.depth();
+      pressure_sensor.read();
+      sum_pressure_at_zero_depth += pressure_sensor.pressure();
+      sum_depth_error_at_zero_depth += pressure_sensor.depth();
       // delay(60)
       // the read function takes ~ 40 ms according to documentation
     }

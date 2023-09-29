@@ -9,9 +9,7 @@
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>
 
-#define NUM_SERVICES 2
-#define NUM_TIMERS 1
-#define NUM_SUBSCRIBERS 1
+#define CALLBACK_TOTAL 5
 
 #define EXECUTE_EVERY_N_MS(MS, X)                                              \
   do {                                                                         \
@@ -29,9 +27,7 @@
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
-rclc_executor_t pub_executor;
-rclc_executor_t sub_executor;
-rclc_executor_t srv_executor;
+rclc_executor_t executor;
 rcl_subscription_t subscriber;
 
 rcl_timer_t timer;
@@ -99,7 +95,6 @@ void pin_setup() {
   my_servo2.write(default_pos_servo);
   my_servo3.write(default_pos_servo);
   thruster.writeMicroseconds(default_pos_thruster);
-  delay(7000);
 }
 
 // "fake function" to allow the service object function to be called
@@ -118,10 +113,12 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   (void)last_call_time;
   if (timer != NULL) {
 
+    // imu_pub.imu_update();
+
     voltage_pub.publish();
     humidity_pub.publish();
     leak_pub.publish();
-    // pressure_pub.publish();
+    pressure_pub.publish();
     imu_pub.publish();
   }
 }
@@ -176,37 +173,32 @@ bool create_entities() {
   gps_srv.setup(node);
   echo_srv.setup(node);
 
-  // create subscribers
+  // create subscriber
   RCCHECK(rclc_subscription_init_default(
       &subscriber, &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav),
       "nav_instructions"));
 
   // create timer (handles periodic publications)
-  const unsigned int timer_timeout = 10;
-  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout),
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(10),
                                   timer_callback));
 
-  // create publisher executor (sends data to micro-ROS topics)
+  // create publisher
   RCSOFTCHECK(
-      rclc_executor_init(&pub_executor, &support.context, NUM_TIMERS, &allocator));
-  RCSOFTCHECK(rclc_executor_add_timer(&pub_executor, &timer));
+      rclc_executor_init(&executor, &support.context, CALLBACK_TOTAL, &allocator));
+  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  // create service executor
-  RCSOFTCHECK(
-      rclc_executor_init(&srv_executor, &support.context, NUM_SERVICES, &allocator));
-  RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &gps_srv.service,
+  // create services
+  RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
                                         &gps_srv.msgReq, &gps_srv.msgRes,
                                         gps_service_callback));
-  RCSOFTCHECK(rclc_executor_add_service(&srv_executor, &echo_srv.service,
+  RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
                                         &echo_srv.msgReq, &echo_srv.msgRes,
                                         echo_service_callback));
 
-  // create subscriber executor (recieves data from micro-ROS topics)
-  RCSOFTCHECK(
-      rclc_executor_init(&sub_executor, &support.context, NUM_SUBSCRIBERS, &allocator));
+  // create subscription
   RCSOFTCHECK(rclc_executor_add_subscription(
-      &sub_executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
+      &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
   return true;
 }
@@ -229,9 +221,7 @@ void destroy_entities() {
   // destroy everything else
   rcl_subscription_fini(&subscriber, &node);
   rcl_timer_fini(&timer);
-  rclc_executor_fini(&sub_executor);
-  rclc_executor_fini(&pub_executor);
-  rclc_executor_fini(&srv_executor);
+  rclc_executor_fini(&executor);
   rcl_node_fini(&node);
   rclc_support_fini(&support);
 }
@@ -249,35 +239,31 @@ void loop() {
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
-  case WAITING_AGENT:
-    EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-                                        ? AGENT_AVAILABLE
-                                        : WAITING_AGENT;);
-    break;
-  case AGENT_AVAILABLE:
-    state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
-    if (state == WAITING_AGENT) {
+    case WAITING_AGENT:
+      EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_AVAILABLE : WAITING_AGENT;);
+      break;
+
+    case AGENT_AVAILABLE:
+      state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
+      if (state == WAITING_AGENT) {
+        destroy_entities();
+      };
+      break;
+
+    case AGENT_CONNECTED:
+      EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
+      if (state == AGENT_CONNECTED) {
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+      }
+      break;
+
+    case AGENT_DISCONNECTED:
       destroy_entities();
-    };
-    break;
-  case AGENT_CONNECTED:
-    EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-                                        ? AGENT_CONNECTED
-                                        : AGENT_DISCONNECTED;);
-    if (state == AGENT_CONNECTED) {
-      // these micro-ROS functions are responsible for processing limited number
-      // of pending tasks in the executor's queue
-      imu_pub.imu_update();
-      RCSOFTCHECK(rclc_executor_spin_some(&pub_executor, RCL_MS_TO_NS(100)));
-      RCSOFTCHECK(rclc_executor_spin_some(&sub_executor, RCL_MS_TO_NS(100)));
-      RCSOFTCHECK(rclc_executor_spin_some(&srv_executor, RCL_MS_TO_NS(100)));
-    }
-    break;
-  case AGENT_DISCONNECTED:
-    destroy_entities();
-    state = WAITING_AGENT;
-    break;
-  default:
-    break;
+      state = WAITING_AGENT;
+      break;
+
+    default:
+      break;
+
   }
 }

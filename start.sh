@@ -13,12 +13,11 @@ echo ""
 cd ~/microros_ws
 source install/setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -b 6000000 &
-pid[0]=$!
+sleep 3
 
 cd ~/ros2_ws
 source install/setup.bash
-ros2 launch frost_uuv frost_uuv_launch.py &
-pid[1]=$!
+ros2 launch frost_uuv frost_uuv_launch.py
 
-trap "kill ${pid[0]} ${pid[1]}; exit 1" INT
+killall micro_ros_agent
 wait

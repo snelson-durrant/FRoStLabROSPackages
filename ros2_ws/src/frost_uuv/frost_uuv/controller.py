@@ -27,7 +27,7 @@ class Controller(Node):
         # main_callback_group - functions outside of the timer callback loop
         # aux_callback_group - functions inside of the timer callback loop
         self.main_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
-        self.aux_callback_group = rclpy.callback_groups.ReentrantCallbackGroup()
+        self.aux_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
 
         # Create the publishers
         self.nav_publisher = self.create_publisher(Nav, "nav_instructions", QOS_PROFILE, callback_group=self.main_callback_group)
@@ -207,20 +207,15 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    try:
-        executor = rclpy.executors.MultiThreadedExecutor()
-        controller = Controller()
-        executor.add_node(controller)
+    executor = rclpy.executors.MultiThreadedExecutor()
+    controller = Controller()
+    executor.add_node(controller)
 
-        try:
-            executor.spin()
+    executor.spin()
 
-        finally:
-            executor.shutdown()
-            controller.destroy_node()
-
-    finally:
-        rclpy.shutdown()
+    executor.shutdown()
+    controller.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":
