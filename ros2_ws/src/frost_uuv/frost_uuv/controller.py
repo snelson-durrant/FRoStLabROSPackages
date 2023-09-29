@@ -207,17 +207,20 @@ class Controller(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    executor = rclpy.executors.MultiThreadedExecutor()
-    controller = Controller()
-    executor.add_node(controller)
+    try:
+        executor = rclpy.executors.MultiThreadedExecutor()
+        controller = Controller()
+        executor.add_node(controller)
 
-    executor.spin()
+        try:
+            executor.spin()
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    controller.destroy_node()
-    rclpy.shutdown()
+        finally:
+            executor.shutdown()
+            controller.destroy_node()
+
+    finally:
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
