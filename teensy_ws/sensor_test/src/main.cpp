@@ -15,24 +15,24 @@ void setup() {
   delay(2000);
   //setup_hum();
   //setup_pressure();
-  //setup_leak;
+  //setup_leak();
   //setup_echo();
-  //setup_voltage;
-  //setup_servo;
-  //setup_gps;
+  setup_voltage();
+  //setup_servo();
+  //setup_gps();
   //setup_imu();
-  setup_humidity_calibrate();
-  setup_pressure_calibrate();
+  //setup_humidity_calibrate();
+  //setup_pressure_calibrate();
 }
 
 void loop() {
   //loop_hum();
   //loop_pressure();
-  //loop_leak;
+  //loop_leak();
   //loop_echo();
-  //loop_voltage;
-  //loop_servo;
-  //loop_gps;
+  loop_voltage();
+  //loop_servo();
+  //loop_gps();
   //loop_imu();
-  loop_calibrate();
+  //loop_calibrate();
 }

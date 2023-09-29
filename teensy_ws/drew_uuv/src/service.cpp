@@ -1,5 +1,5 @@
-#ifndef PUBLISHER
-#define PUBLISHER
+#ifndef SERVICE
+#define SERVICE
 
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
@@ -21,18 +21,15 @@
     }                                                                          \
   }
 
-class Publisher {
+class Service {
 
 public:
-  // these need to be defined by each publisher
+  // these need to be defined by each service
   virtual void setup(rcl_node_t node) = 0;
-  virtual void publish() = 0;
-
-  void destroy(rcl_node_t node) { RCCHECK(rcl_publisher_fini(&publisher, &node)); }
+  virtual void respond(const void *request_msg, void *response_msg) = 0;
+  virtual void destroy(rcl_node_t node) = 0;
 
 protected:
-  rcl_publisher_t publisher;
-
   void error_loop() {
     while (1) {
       delay(100);
@@ -40,4 +37,4 @@ protected:
   }
 };
 
-#endif // PUBLISHER
+#endif // SERVICE

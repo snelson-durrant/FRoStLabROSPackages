@@ -1,53 +1,48 @@
-#include <publisher.cpp>
-#include <DHT.h>
 #include <Adafruit_Sensor.h>
-#include <std_msgs/msg/int64_multi_array.h>
+#include <DHT.h>
 #include <frost_interfaces/msg/humid.h>
+#include <publisher.cpp>
+#include <std_msgs/msg/int64_multi_array.h>
 #define DHTPIN 4
 #define DHTTYPE DHT22
 
-
-
 class HumidityPub : Publisher {
 
-    public:
+public:
+  void setup(rcl_node_t node) {
 
-        void setup(rcl_node_t node) {
+    dht.begin();
 
-            dht.begin();
+    RCCHECK(rclc_publisher_init_default(
+        &publisher, &node,
+        ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Humid), "humidity"));
 
-            RCCHECK(rclc_publisher_init_default(
-            &publisher,
-            &node,
-            ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Humid),
-            "humidity"));
+    humidity_calibrate();
+  }
 
-            humidity_calibrate();
-        }
+  void publish() {
 
-        void publish() {
-        
-            float humidity = dht.readHumidity();
-            float temperature = dht.readTemperature(true);
-            msg.humidity = humidity;
-            msg.temp = temperature;
-            msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-            RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-        }
+    float humidity = dht.readHumidity();
+    float temperature = dht.readTemperature(true);
+    if (humidity > humidity_threshold) {
+      msg.humidity = humidity;
+      msg.temp = temperature;
+      msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+      RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+    }
+  }
 
-        using Publisher::destroy;
-      
-   private:
+  using Publisher::destroy;
 
-        DHT dht = DHT(DHTPIN, DHTTYPE);
-        
+private:
+  DHT dht = DHT(DHTPIN, DHTTYPE);
 
-        frost_interfaces__msg__Humid msg;
+  frost_interfaces__msg__Humid msg;
 
-        double humidity_threshold = 50.00;
+  double humidity_threshold = 50.00;
 
-        void humidity_calibrate(){
-            //Clayton put code here to measure humidity
-            //@ClaytonSmith
-        }
+  void humidity_calibrate() {
+    // Clayton put code here to measure humidity
+    //@ClaytonSmith
+  }
 };
