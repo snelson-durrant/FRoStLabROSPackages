@@ -114,8 +114,6 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   (void)last_call_time;
   if (timer != NULL) {
 
-    // imu_pub.imu_update();
-
     voltage_pub.publish();
     humidity_pub.publish();
     leak_pub.publish();
@@ -200,6 +198,7 @@ void destroy_entities() {
   leak_pub.destroy(node);
   pressure_pub.destroy(node);
   imu_pub.destroy(node);
+  imu_pub.reset();
 
   // destroy services
   gps_srv.destroy(node);
@@ -239,6 +238,7 @@ void loop() {
     case AGENT_CONNECTED:
       EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
       if (state == AGENT_CONNECTED) {
+        // imu_pub.imu_update();
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
       }
       break;

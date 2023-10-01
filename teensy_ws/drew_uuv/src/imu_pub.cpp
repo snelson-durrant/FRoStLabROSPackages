@@ -123,6 +123,10 @@ public:
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
   }
 
+  void reset() {
+    bno08x.hardwareReset();
+  }
+
   using Publisher::destroy;
 
 private:
