@@ -4,7 +4,7 @@ from enum import Enum
 from frost_interfaces.msg import Nav, IMU, Depth, Echo, GPS
 from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 import numpy as np
-from PID import PIController
+import PID
 
 kp = 0.1  # Proportional gain
 ki = 0.01  # Integral gain
