@@ -3,8 +3,8 @@
 #include <frost_interfaces/msg/volt.h>
 #include <Wire.h>
 
-#define VOLTAGE_WARNING 15
-#define VOLTAGE_CRITICAL 13
+#define VOLTAGE_WARNING 15000
+#define VOLTAGE_CRITICAL 13000
 
 class VoltagePub : Publisher {
 
