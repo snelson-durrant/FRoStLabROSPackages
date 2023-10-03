@@ -42,6 +42,13 @@ public:
 
   void setup(rcl_node_t node) {
 
+    RCCHECK(rclc_publisher_init_default(
+        &publisher, &node,
+        ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, IMU), "imu_data"));
+  }
+
+  void imu_setup() {
+
     if (!bno08x.begin_I2C()) {
       Serial.println("Failed to find BNO08x chip");
     } else {
@@ -49,10 +56,6 @@ public:
       setReports();
       Serial.println("Reading events");
     }
-
-    RCCHECK(rclc_publisher_init_default(
-        &publisher, &node,
-        ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, IMU), "imu_data"));
   }
 
   void imu_update() {

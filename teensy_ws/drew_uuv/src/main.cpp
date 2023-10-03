@@ -218,11 +218,13 @@ void setup() {
   Serial.begin(BAUD_RATE);
   set_microros_serial_transports(Serial);
   pin_setup();
+  imu_pub.imu_setup();
 
   state = WAITING_AGENT;
 }
 
 void loop() {
+  imu_pub.imu_update();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
@@ -240,7 +242,6 @@ void loop() {
     case AGENT_CONNECTED:
       EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
       if (state == AGENT_CONNECTED) {
-        // imu_pub.imu_update();
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
       }
       break;
