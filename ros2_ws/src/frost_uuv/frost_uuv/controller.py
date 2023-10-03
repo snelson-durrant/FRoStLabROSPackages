@@ -168,6 +168,7 @@ class Controller(Node):
         self.imu_raw_mag_x = msg.raw_mag_x
         self.imu_raw_mag_y = msg.raw_mag_y
         self.imu_raw_mag_z = msg.raw_mag_z
+        
         self.calculate_velocityx(msg.header.stamp.sec + msg.header.stamp.nanosec*10**-9)
         self.get_logger().info("Velocity X")
         self.get_logger().info(str(self.velocityx))
