@@ -4,7 +4,14 @@ from enum import Enum
 from frost_interfaces.msg import Nav, IMU, Depth, Echo, GPS
 from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 import numpy as np
+from PID import PIController
 
+kp = 0.1  # Proportional gain
+ki = 0.01  # Integral gain
+min_output = 0  # Minimum control signal
+max_output = 100  # Maximum control signal
+velocityPI = PIController(kp, ki, min_output, max_output)
+goal_velocity = 50  # Replace with your desired goal velocity
 
 NAV_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
@@ -92,7 +99,6 @@ class Controller(Node):
         self.prevaccelx = self.imu_accel_x
         self.prev_time_imu = time
 
-
     
     # Updates the recieved IMU data
     def imu_listener_callback(self, msg):
@@ -126,7 +132,7 @@ class Controller(Node):
         self.imu_raw_mag_x = msg.raw_mag_x
         self.imu_raw_mag_y = msg.raw_mag_y
         self.imu_raw_mag_z = msg.raw_mag_z
-        calculate_velocityx(msg.header.timestamp)
+        self.calculate_velocityx(msg.header.timestamp)
         self.get_logger().info("Velocity X")
         self.get_logger().info(self.velocityx)
 
@@ -191,8 +197,12 @@ class Controller(Node):
             # echo_msg = self.get_echo()
             # gps_msg = self.get_gps()
 
+            control_signal = velocityPI.compute(goal_velocity, self.velocityx)
+
             nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
-            nav_msg.thruster = DEFAULT_THRUSTER
+            nav_msg.thruster = control_signal
+            self.get_logger().info("Control Signal: ")
+            self.get_logger().info(control_signal)
 
             self.get_logger().info("PUBLISHING TO NAV_INSTRUCTIONS")
 
