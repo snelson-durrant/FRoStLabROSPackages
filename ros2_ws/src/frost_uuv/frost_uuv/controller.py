@@ -4,6 +4,7 @@ from enum import Enum
 from frost_interfaces.msg import Nav, IMU, Depth, Echo, GPS
 from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 import numpy as np
+from math import atan2, pi
 
 class PIController:
     def __init__(self, kp, ki, min_output, max_output):
@@ -42,12 +43,19 @@ class PIController:
 
         return output
     
-kp = 0.1  # Proportional gain
-ki = 0.01  # Integral gain
-min_output = 0  # Minimum control signal
-max_output = 100  # Maximum control signal
-velocityPI = PIController(kp, ki, min_output, max_output)
+kp_velocity = 0.1  # Proportional gain
+ki_velocity = 0.01  # Integral gain
+min_output_thruster = 0  # Minimum control signal
+max_output_thruster = 100  # Maximum control signal
+velocityPI = PIController(kp_velocity, ki_velocity, min_output_thruster, max_output_thruster)
 goal_velocity = 50  # Replace with your desired goal velocity
+
+kp_heading = 0.1  # Proportional gain
+ki_heading = 0.01  # Integral gain
+min_output_servo = 45  # Minimum control signal
+max_output_servo = 135  # Maximum control signal
+headingPI = PIController(kp_heading, ki_heading, min_output_servo, max_output_servo)
+goal_heading = 50  # Replace with your desired goal velocity
 
 NAV_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
@@ -135,6 +143,9 @@ class Controller(Node):
         self.prevaccelx = self.imu_accel_x
         self.prev_time_imu = time
 
+    def calculate_heading(self):
+        self.heading = atan2(self.imu_mag_y, self.imu_mag_y) * 180 / pi
+
     
     # Updates the recieved IMU data
     def imu_listener_callback(self, msg):
@@ -172,6 +183,9 @@ class Controller(Node):
         self.calculate_velocityx(msg.header.stamp.sec + msg.header.stamp.nanosec*10**-9)
         self.get_logger().info("Velocity X")
         self.get_logger().info(str(self.velocityx))
+        self.calculate_heading()
+        self.get_logger().info("Heading")
+        self.get_logger().info(str(self.heading))
 
     # Updates the recieved pressure sensor data
     def depth_listener_callback(self, msg):
@@ -235,8 +249,11 @@ class Controller(Node):
             # gps_msg = self.get_gps()
 
             control_signal = velocityPI.compute(goal_velocity, self.velocityx)
-
-            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
+            top_fin_control = headingPI.compute(goal_heading, self.heading)
+            nav_msg.servo1 = int(top_fin_control)
+            self.get_logger().info("Servo Signal: ")
+            self.get_logger().info(str(top_fin_control))
+            nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
             nav_msg.thruster = int(control_signal)
             self.get_logger().info("Control Signal: ")
             self.get_logger().info(str(control_signal))
