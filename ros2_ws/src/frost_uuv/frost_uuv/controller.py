@@ -33,7 +33,7 @@ class PIController:
             self.integral = self.min_output
 
         # Calculate the control signal (output)
-        output = self.kp * error + self.ki * self.integral
+        output = self.kp * error # + self.ki * self.integral
 
         # Apply output limits
         if output > self.max_output:
@@ -78,6 +78,7 @@ class Controller(Node):
 
         self.done =False #using this to allow the imu to get one reading before calculating velocity
         self.velocityx = 0
+        self.heading = goal_heading
 
         # Create the callback groups
         # main_callback_group - functions outside of the timer callback loop
@@ -143,8 +144,9 @@ class Controller(Node):
         self.prevaccelx = self.imu_accel_x
         self.prev_time_imu = time
 
+
     def calculate_heading(self):
-        self.heading = atan2(self.imu_mag_y, self.imu_mag_y) * 180 / pi
+        self.heading = atan2(self.imu_mag_y, self.imu_mag_x) * 180.0 / pi
 
     
     # Updates the recieved IMU data
@@ -253,7 +255,7 @@ class Controller(Node):
             nav_msg.servo1 = int(top_fin_control)
             self.get_logger().info("Servo Signal: ")
             self.get_logger().info(str(top_fin_control))
-            nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
+            nav_msg.servo2, nav_msg.servo3 = (90, 90)
             nav_msg.thruster = int(control_signal)
             self.get_logger().info("Control Signal: ")
             self.get_logger().info(str(control_signal))
