@@ -10,7 +10,7 @@ kp = 0.1  # Proportional gain
 ki = 0.01  # Integral gain
 min_output = 0  # Minimum control signal
 max_output = 100  # Maximum control signal
-velocityPI = PIController(kp, ki, min_output, max_output)
+velocityPI = PID.PIController(kp, ki, min_output, max_output)
 goal_velocity = 50  # Replace with your desired goal velocity
 
 NAV_PUB_TIMER_PERIOD = 1  # seconds
