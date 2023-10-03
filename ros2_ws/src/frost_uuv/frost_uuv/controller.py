@@ -3,6 +3,8 @@ from rclpy.node import Node
 from enum import Enum
 from frost_interfaces.msg import Nav, IMU, Depth, Echo, GPS
 from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
+import numpy as np
+
 
 NAV_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
@@ -22,6 +24,9 @@ class Controller(Node):
     # Creates all of the publishers, subscriptions, services, and clients
     def __init__(self):
         super().__init__("controller")
+
+        self.done =False #using this to allow the imu to get one reading before calculating velocity
+        self.velocityx = 0
 
         # Create the callback groups
         # main_callback_group - functions outside of the timer callback loop
@@ -78,6 +83,17 @@ class Controller(Node):
         self.prev_servo1, self.prev_servo2, self.prev_servo3 = DEFAULT_SERVO
         self.prev_thruster = DEFAULT_THRUSTER
 
+    
+    def calculate_velocityx(self, time):
+        if(self.done):
+            self.velocityx += np.trapz([self.prevaccelx, self.imu_accel_x],[self.prev_time_imu,time])
+        else:
+            self.done = True
+        self.prevaccelx = self.imu_accel_x
+        self.prev_time_imu = time
+
+
+    
     # Updates the recieved IMU data
     def imu_listener_callback(self, msg):
         self.imu_accel_x = msg.accel_x
@@ -110,6 +126,9 @@ class Controller(Node):
         self.imu_raw_mag_x = msg.raw_mag_x
         self.imu_raw_mag_y = msg.raw_mag_y
         self.imu_raw_mag_z = msg.raw_mag_z
+        calculate_velocityx(msg.header.timestamp)
+        self.get_logger().info("Velocity X")
+        self.get_logger().info(self.velocityx)
 
     # Updates the recieved pressure sensor data
     def depth_listener_callback(self, msg):
