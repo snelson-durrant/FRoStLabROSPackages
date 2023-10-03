@@ -1,4 +1,4 @@
 # description of the error
-std_msgs/String error
+string error
 ---
 bool stopped
