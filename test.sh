@@ -3,7 +3,7 @@
 cd ~/microros_ws
 source install/setup.bash
 ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -b 6000000 &
-sleep 3
+sleep 5
 
 echo ""
 echo "TESTING SERVO COMMANDS..."
@@ -28,10 +28,6 @@ ros2 service call /echo_service frost_interfaces/srv/GetEcho "{test: True}"
 
 echo ""
 echo "READING IMU DATA..."
-ros2 topic echo --once /imu_data
-
-echo ""
-echo "READING IMU DATA (2)..."
 ros2 topic echo --once /imu_data
 
 echo ""
