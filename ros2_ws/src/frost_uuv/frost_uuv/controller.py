@@ -139,6 +139,8 @@ class Controller(Node):
         echo_msg.conf_level = current_echo.conf_level
         echo_msg.profile_data = current_echo.profile_data
         self.echo_publisher.publish(echo_msg)
+
+        return echo_msg
     
     # Gets the gps data from the gps service and publishes it
     def get_gps(self):
@@ -155,6 +157,8 @@ class Controller(Node):
         gps_msg.altitude = current_gps.altitude
         gps_msg.siv = current_gps.siv
         self.gps_publisher.publish(gps_msg)
+
+        return gps_msg
     
     # Runs the state machine and controller, publishes to nav_instructions
     def timer_callback(self):
@@ -165,11 +169,8 @@ class Controller(Node):
             # CONTROLLER CODE STARTS HERE
             ########################################
 
-            self.get_echo()
-            self.get_logger().info("TESTED ECHO SERVICE")
-
-            self.get_gps()
-            self.get_logger().info("TESTED GPS SERVICE")
+            # echo_msg = self.get_echo()
+            # gps_msg = self.get_gps()
 
             nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
             nav_msg.thruster = DEFAULT_THRUSTER
