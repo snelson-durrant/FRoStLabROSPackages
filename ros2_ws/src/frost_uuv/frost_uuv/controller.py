@@ -19,6 +19,44 @@ class PIController:
         # State variables
         self.integral = 0.0
 
+    def compute_heading(self, goal, current):
+        current += 180
+        if goal > current:
+            if (360 - goal + current) < (goal - current):
+                print("turn left")
+                error = -1 * (360 - goal + current)
+            else:
+                print("turn right")
+                error = goal-current
+        else:
+            if (360 - current + goal) < (current - goal):
+                print("turn right h")
+                error = 360 - current + goal
+            else:
+                print("turn left h")
+                error = goal - current
+
+        # Calculate the integral term
+        self.integral += error
+
+        # Apply limits to the integral term to prevent windup
+        if self.integral > (self.max_output - 90)/self.ki:
+            self.integral = (self.max_output - 90)/self.ki
+        elif self.integral < (self.min_output - 90)/self.ki:
+            self.integral = (self.min_output - 90)/self.ki
+        
+        # Calculate the control signal (output)
+        pi_value = self.kp * error + self.ki * self.integral
+        output = 90 + pi_value
+        
+        # Apply output limits
+        if output > self.max_output:
+            output = self.max_output
+        elif output < self.min_output:
+            output = self.min_output
+
+        return output
+
     def compute(self, setpoint, current_value):
         # Calculate the error
         error = setpoint - current_value
@@ -251,7 +289,7 @@ class Controller(Node):
             # gps_msg = self.get_gps()
 
             control_signal = velocityPI.compute(goal_velocity, self.velocityx)
-            top_fin_control = headingPI.compute(goal_heading, self.heading)
+            top_fin_control = headingPI.compute_heading(goal_heading, self.heading)
             nav_msg.servo1 = int(top_fin_control)
             self.get_logger().info("Servo Signal: ")
             self.get_logger().info(str(top_fin_control))
