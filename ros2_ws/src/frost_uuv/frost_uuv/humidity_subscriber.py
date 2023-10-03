@@ -26,7 +26,7 @@ class HumiditySubscriber(Node):
         return self.future.result()
 
     def listener_callback(self, msg):
-        error = "ERROR: High Humidity (" + str(msg.humidity) + ")"
+        error = str("ERROR: High Humidity (" + str(msg.humidity) + ")")
         self.send_request(error)
 
 
