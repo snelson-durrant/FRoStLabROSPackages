@@ -6,7 +6,6 @@
 
 #define AVG_COUNT 10
 #define AVG_DEC 0.1
-#define AVG_DELAY 60
 
 class PressurePub : Publisher {
 
@@ -57,7 +56,7 @@ private:
       pressure_sensor.read();
       sum_pressure_at_zero_depth += pressure_sensor.pressure();
       sum_depth_error_at_zero_depth += pressure_sensor.depth();
-      delay(AVG_DELAY) // the read function takes ~ 40 ms according to documentation
+      // the read function takes ~ 40 ms according to documentation
     }
 
     pressure_at_zero_depth = sum_pressure_at_zero_depth * AVG_DEC;

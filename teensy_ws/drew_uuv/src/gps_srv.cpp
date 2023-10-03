@@ -4,8 +4,8 @@
 #include <frost_interfaces/srv/get_gps.h>
 
 #define GPS_RATE 9600
-#define RX_PIN 28
-#define TX_PIN 29
+#define GPS_RX_PIN 28
+#define GPS_TX_PIN 29
 
 class GPSSrv : Service {
 public:
@@ -40,6 +40,6 @@ public:
   }
 
 private:
-  SoftwareSerial gps_serial = SoftwareSerial(RX_PIN, TX_PIN);
+  SoftwareSerial gps_serial = SoftwareSerial(GPS_RX_PIN, GPS_TX_PIN);
   SFE_UBLOX_GNSS GNSS;
 };

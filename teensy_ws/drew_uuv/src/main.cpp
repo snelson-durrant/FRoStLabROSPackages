@@ -185,6 +185,8 @@ bool create_entities() {
   RCSOFTCHECK(rclc_executor_add_subscription(
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
+  Serial.print("end setup\n");
+
   return true;
 }
 
@@ -198,7 +200,6 @@ void destroy_entities() {
   leak_pub.destroy(node);
   pressure_pub.destroy(node);
   imu_pub.destroy(node);
-  imu_pub.reset();
 
   // destroy services
   gps_srv.destroy(node);
@@ -215,6 +216,7 @@ void destroy_entities() {
 void setup() {
 
   Serial.begin(BAUD_RATE);
+  set_microros_serial_transports(Serial);
   pin_setup();
 
   state = WAITING_AGENT;

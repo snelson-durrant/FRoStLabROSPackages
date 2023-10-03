@@ -35,7 +35,7 @@ private:
   frost_interfaces__msg__Leak msg;
 
   bool check_water_leak() {
-    leak = digitalRead(leak_pin);
+    leak = digitalRead(LEAK_PIN);
     if (leak == 1) {
       return true;
     } else {
