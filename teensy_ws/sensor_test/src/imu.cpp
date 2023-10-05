@@ -30,7 +30,7 @@ double returnVel(){return velocity;}
 float goal_heading = 275;
 // Arbitrary setpoint and gains - adjust these as fit for your project:
 double setpoint = 0;
-double p = 0.7;   //Tune the PID!
+double p = 0.4;   //Tune the PID!
 double i = 0.1;
 double d = 0.5;
 
@@ -61,7 +61,7 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
     }
     Serial.print("Input: ");
     Serial.println(input);
-    output = Heading.compute(0, input);
+    output = Heading.compute(goal_heading, heading_curr);    
     Serial.print("output");
     Serial.println(output);
     return int(output);
@@ -107,16 +107,16 @@ void setReports(void) {
     // if (!bno08x.enableReport(SH2_ACCELEROMETER)) {
     //   Serial.println("Could not enable accelerometer");
     // }
-    if (!bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED)) {
-      Serial.println("Could not enable gyroscope");
-    }
+    // if (!bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED)) {
+    //   Serial.println("Could not enable gyroscope");
+    // }
     // if (!bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED)) {
     //   Serial.println("Could not enable magnetic field calibrated");
     // }
-    if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION, 2500)) {
+    if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial.println("Could not enable linear acceleration");
     }
-    if (! bno08x.enableReport(reportType, reportIntervalUs)) {
+    if (! bno08x.enableReport(reportType)) {
     Serial.println("Could not enable stabilized remote vector");
     }
     // if (!bno08x.enableReport(SH2_GRAVITY)) {
@@ -167,11 +167,12 @@ void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr
 
 
 void setup_imu() {
-    bno08x.hardwareReset();
-    while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
+    
+    if(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
         Serial.println(millis());
-        delay(10);
+        delay(100);
+        bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
     }
 
     Serial.println("BNO08x Found!");

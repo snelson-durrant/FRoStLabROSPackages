@@ -2,7 +2,7 @@
 #define PID
 
 #include <Arduino.h>
-#define INTEGRAL_CAP 3  //3 times the max output
+#define INTEGRAL_CAP 4  //3 times the max output
 
 class PID_Control
 {
@@ -34,10 +34,10 @@ public:
         Serial.println(error);
         integral = integral + error;
         if(integral > ((max_output - bias)*INTEGRAL_CAP)){
-            integral = max_output - bias;
+            integral = (max_output - bias)*INTEGRAL_CAP;
         }
         if(integral < ((min_output - bias)*INTEGRAL_CAP)){
-            integral = min_output - bias;           //if the min output was 45 but the bias is 90 then the integral cap would be -45
+            integral = (min_output - bias)*INTEGRAL_CAP;           //if the min output was 45 but the bias is 90 then the integral cap would be -45
         }
         Serial.print("Integral");
         Serial.println(integral);
