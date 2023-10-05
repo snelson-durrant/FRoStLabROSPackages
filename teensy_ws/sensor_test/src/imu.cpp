@@ -7,7 +7,7 @@ struct euler_t {
   float pitch;
   float roll;
 } ypr;
-// #define FAST_MODE
+#define FAST_MODE
 #ifdef FAST_MODE
   // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
   sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
