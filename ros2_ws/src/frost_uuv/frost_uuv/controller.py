@@ -202,7 +202,6 @@ class Controller(Node):
             pid_msg.depth = 0
             pid_msg.stop = True
 
-        # TODO: Update the below
         # Only publish the new pid_request values if they change
         if (
             self.prev_velocity != pid_msg.velocity
