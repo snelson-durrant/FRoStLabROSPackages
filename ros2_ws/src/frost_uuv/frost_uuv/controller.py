@@ -75,8 +75,12 @@ class Controller(Node):
 
         # Set initial variables
         self.state = States.RUN
-        self.prev_servo1, self.prev_servo2, self.prev_servo3 = DEFAULT_SERVO
-        self.prev_thruster = DEFAULT_THRUSTER
+        self.prev_velocity = 0
+        self.prev_yaw = 0
+        self.prev_pitch = 0
+        self.prev_roll = 0
+        self.prev_depth = 0
+        self.stop = False
 
     # Updates the recieved IMU data
     def imu_listener_callback(self, msg):
@@ -166,44 +170,52 @@ class Controller(Node):
 
         if self.state == States.RUN:
             ########################################
-            # CONTROLLER CODE STARTS HERE
+            # HIGH-LEVEL CONTROLLER CODE STARTS HERE
             ########################################
 
             # echo_msg = self.get_echo()
             # gps_msg = self.get_gps()
-
-            # test
 
             pid_msg.stop = False
 
             self.get_logger().info("PUBLISHING TO PID_REQUEST")
 
             ########################################
-            # CONTROLLER CODE ENDS HERE
+            # HIGH-LEVEL CONTROLLER CODE ENDS HERE
             ########################################
 
         elif self.state == States.STOP:
+            pid_msg.velocity = 0
+            pid_msg.yaw = 0
+            pid_msg.pitch = 0
+            pid_msg.roll = 0
+            pid_msg.depth = 0
             pid_msg.stop = True
         
         # TODO: Update the below
         # Only publish the new pid_request values if they change
         if (
-            self.prev_servo1 != nav_msg.servo1
-            or self.prev_servo2 != nav_msg.servo2
-            or self.prev_servo3 != nav_msg.servo3
-            or self.prev_thruster != nav_msg.thruster
+            self.prev_velocity != pid_msg.velocity
+            or self.prev_yaw != pid_msg.yaw
+            or self.prev_pitch != pid_msg.pitch
+            or self.prev_roll != pid_msg.roll
+            or self.prev_depth != pid_msg.depth
+            or self.stop != pid_msg.stop
         ):
             pid_msg.header.stamp = Node.get_clock(self).now().to_msg()
             self.get_logger().info(
-                "Servos (%d, %d, %d), Thruster (%d)"
-                % (nav_msg.servo1, nav_msg.servo2, nav_msg.servo3, nav_msg.thruster)
+                "Velocity (%d), Heading (%d, %d, %d), Depth (%d)"
+                % (pid_msg.velocity, pid_msg.yaw, pid_msg.pitch, pid_msg.roll, pid_msg.depth)
             )
-            self.nav_publisher.publish(nav_msg)
+            self.nav_publisher.publish(pid_msg)
 
-        self.prev_servo1 = nav_msg.servo1
-        self.prev_servo2 = nav_msg.servo2
-        self.prev_servo3 = nav_msg.servo3
-        self.prev_thruster = nav_msg.thruster
+        self.prev_velocity = pid_msg.velocity
+        self.prev_yaw = pid_msg.yaw
+        self.prev_pitch = pid_msg.pitch
+        self.prev_roll = pid_msg.roll
+        self.prev_depth = pid_msg.depth
+        self.stop = pid_msg.stop
+        
 
 
 def main(args=None):
