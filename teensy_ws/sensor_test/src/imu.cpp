@@ -1,12 +1,79 @@
 #include <Adafruit_BNO08x.h>
 #include <Arduino.h>
 #include <Wire.h>
+#include <PID.h>
+#include <Servo.h>
+#define SERVO_PIN1 9
+Servo my_servo;
+PID_Control Heading;
+float input;
+float output;
 
 struct euler_t {
   float yaw;
   float pitch;
   float roll;
 } ypr;
+
+Adafruit_BNO08x bno08x;
+sh2_SensorValue_t sensorValue;
+
+float linear_accel_x;
+bool first_time = false;
+double velocity = 0;
+float prev_accel;
+unsigned long prev_time;
+
+float returnYaw(){return ypr.yaw + 180.00;}
+double returnVel(){return velocity;}
+
+float goal_heading = 15.00;
+// Arbitrary setpoint and gains - adjust these as fit for your project:
+double setpoint = 0;
+double p = 0.1;
+double i = 0.01;
+double d = 0.5;
+
+void setup_PID(){
+  my_servo.attach(SERVO_PIN1);
+  my_servo.write(90);
+  Heading.begin(p,i,45, 135, 90);
+}
+
+int compute_heading(float heading_curr){          //TODO: Make the parameter a pointer directly to the heading 
+    Serial.print("Heading: ");
+    Serial.println(heading_curr);
+    if(goal_heading > heading_curr){
+        if((360 - goal_heading + heading_curr) < (goal_heading - heading_curr)){
+            input = -1 * (360 - goal_heading + heading_curr);
+        }
+        else{
+            input = goal_heading - heading_curr;
+        }
+    }
+    else{ // add this to nav
+      if((360 - heading_curr + goal_heading) < (heading_curr - goal_heading)){
+          input = (360 - heading_curr + goal_heading);
+      }
+      else{
+          input = goal_heading - heading_curr;
+      }
+    }
+    Serial.print("Input: ");
+    Serial.println(input);
+    output = Heading.compute(0, input);
+    Serial.print("output");
+    Serial.println(output);
+    return int(output);
+  }
+
+void PID_loop(){
+  int servo1_angle = compute_heading(returnYaw());
+  Serial.print("Servo Angle: ");
+  Serial.println(servo1_angle);
+  my_servo.write(servo1_angle);
+}
+
 //#define FAST_MODE
 #ifdef FAST_MODE
   // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
@@ -18,14 +85,7 @@ struct euler_t {
   long reportIntervalUs = 5000;
 #endif
 
-Adafruit_BNO08x bno08x;
-sh2_SensorValue_t sensorValue;
 
-float linear_accel_x;
-bool first_time = false;
-double velocity = 0;
-float prev_accel;
-unsigned long prev_time;
 
 void calcultate_velocity(){     //Could make function with pointers so it can calculate all velocities
   if(!first_time){
@@ -105,8 +165,9 @@ void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr
     quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
 }
 
+
 void setup_imu() {
-    
+    bno08x.hardwareReset();
     while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
         Serial.println(millis());
@@ -116,14 +177,14 @@ void setup_imu() {
     Serial.println("BNO08x Found!");
     setReports();
     Serial.println("Reading events");
-
+    setup_PID();
 }
 
 long now;
 static long last =0;
 
 void loop_imu() {
-    
+  PID_loop();
   if (bno08x.wasReset()) {
     Serial.print("sensor was reset ");
     setReports();
