@@ -172,6 +172,8 @@ class Controller(Node):
             # echo_msg = self.get_echo()
             # gps_msg = self.get_gps()
 
+            # test
+
             nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
             nav_msg.thruster = DEFAULT_THRUSTER
 
