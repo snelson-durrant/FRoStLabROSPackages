@@ -179,19 +179,59 @@ class Controller(Node):
     
     def calculate_velocityx(self, time):
         if(self.done):
-            self.velocityx += np.trapz([self.prevaccelx, self.imu_accel_x],[self.prev_time_imu,time])
+            self.velocityx += np.trapz([self.prevaccelx, self.imu_accel_x_filtered],[self.prev_time_imu,time])
         else:
             self.done = True
-        self.prevaccelx = self.imu_accel_x
+        self.prevaccelx = self.imu_accel_x_filtered
         self.prev_time_imu = time
 
 
     def calculate_heading(self):
-        self.heading = 180 + (atan2(self.imu_mag_y, self.imu_mag_x) * 180.0 / pi)
+        self.heading = 180 + (atan2(self.imu_mag_y_filtered, self.imu_mag_x_filtered) * 180.0 / pi)
         self.get_logger().info("Heading")
         self.get_logger().info(str(self.heading))
 
-    
+
+    # applys an alpha filter to the imu raw data to reduce errors in data
+    # only updating values used for now
+    def imu_alpha_filter(self):
+        def af(filtered_val, new_val, alpha=.9):
+            return alpha*filtered_val + (1-alpha)*new_val 
+        self.imu_accel_x_filtered = af(self.imu_accel_x_filtered, self.imu_accel_x)
+        self.imu_accel_y_filtered = af(self.imu_accel_y_filtered, self.imu_accel_y)
+        self.imu_accel_z_filtered = af(self.imu_accel_z_filtered, self.imu_accel_z)
+        self.imu_gyro_x_filtered = af(self.imu_gyro_x_filtered, self.imu_gyro_x)
+        self.imu_gyro_y_filtered = af(self.imu_gyro_y_filtered, self.imu_gyro_y)
+        self.imu_gyro_z_filtered = af(self.imu_gyro_z_filtered, self.imu_gyro_z)
+        self.imu_mag_x_filtered = af(self.imu_mag_x_filtered, self.imu_mag_x)
+        self.imu_mag_y_filtered = af(self.imu_mag_y_filtered, self.imu_mag_y)
+        self.imu_mag_z_filtered = af(self.imu_mag_z_filtered, self.imu_mag_z)
+        self.imu_lin_accel_x_filtered = af(self.imu_lin_accel_x_filtered, self.imu_lin_accel_x)
+        self.imu_lin_accel_y_filtered = af(self.imu_lin_accel_y_filtered, self.imu_lin_accel_y)
+        self.imu_lin_accel_z_filtered = af(self.imu_lin_accel_z_filtered, self.imu_lin_accel_z)
+        self.imu_grav_x_filtered = af(self.imu_grav_x_filtered, self.imu_grav_x)
+        self.imu_grav_y_filtered = af(self.imu_grav_y_filtered, self.imu_grav_y)
+        self.imu_grav_z_filtered = af(self.imu_grav_z_filtered, self.imu_grav_z)
+        self.imu_rot_vec_i_filtered = af(self.imu_rot_vec_i_filtered, self.imu_rot_vec_i)
+        self.imu_rot_vec_j_filtered = af(self.imu_rot_vec_j_filtered, self.imu_rot_vec_j)
+        self.imu_rot_vec_k_filtered = af(self.imu_rot_vec_k_filtered, self.imu_rot_vec_k)
+        self.imu_geomag_rot_vec_i_filtered = af(self.imu_geomag_rot_vec_i_filtered, self.imu_geomag_rot_vec_i)
+        self.imu_geomag_rot_vec_j_filtered = af(self.imu_geomag_rot_vec_j_filtered, self.imu_geomag_rot_vec_j)
+        self.imu_geomag_rot_vec_k_filtered = af(self.imu_geomag_rot_vec_k_filtered, self.imu_geomag_rot_vec_k)
+        self.imu_raw_accel_x_filtered = af(self.imu_raw_accel_x_filtered, self.imu_raw_accel_x)
+        self.imu_raw_accel_y_filtered = af(self.imu_raw_accel_y_filtered, self.imu_raw_accel_y)
+        self.imu_raw_accel_z_filtered = af(self.imu_raw_accel_z_filtered, self.imu_raw_accel_z)
+        self.imu_raw_gyro_x_filtered = af(self.imu_raw_gyro_x_filtered, self.imu_raw_gyro_x)
+        self.imu_raw_gyro_y_filtered = af(self.imu_raw_gyro_y_filtered, self.imu_raw_gyro_y)
+        self.imu_raw_gyro_z_filtered = af(self.imu_raw_gyro_z_filtered, self.imu_raw_gyro_z)
+        self.imu_raw_mag_x_filtered = af(self.imu_raw_mag_x_filtered, self.imu_raw_mag_x)
+        self.imu_raw_mag_y_filtered = af(self.imu_raw_mag_y_filtered, self.imu_raw_mag_y)
+        self.imu_raw_mag_z_filtered = af(self.imu_raw_mag_z_filtered, self.imu_raw_mag_z)
+
+
+
+
+
     # Updates the recieved IMU data
     def imu_listener_callback(self, msg):
         self.imu_accel_x = msg.accel_x
@@ -225,6 +265,8 @@ class Controller(Node):
         self.imu_raw_mag_y = msg.raw_mag_y
         self.imu_raw_mag_z = msg.raw_mag_z
         
+        self.imu_alpha_filter()
+
         self.calculate_velocityx(msg.header.stamp.sec + msg.header.stamp.nanosec*10**-9)
         # self.get_logger().info("Velocity X")
         # self.get_logger().info(str(self.velocityx))
