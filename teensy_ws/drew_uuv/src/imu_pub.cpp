@@ -6,6 +6,12 @@
 class IMUPub : Publisher {
 
 public:
+  struct euler_t {
+    float yaw;
+    float pitch;
+    float roll;
+  } ypr;
+
   void setReports(void) {
     Serial.println("Setting desired reports");
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
@@ -55,18 +61,20 @@ public:
       Serial.println("Reading events");
     }
   }
-  void calcultate_velocity(){     //Could make function with pointers so it can calculate all velocities
+
+  float returnYaw(){return ypr.yaw + 180.00;}
+  double returnVel(){return velocity;}
+
+  void calculate_velocity(){     //Could make function with pointers so it can calculate all velocities
     if(!first_time){
       prev_time = micros();
       prev_accel = linear_accel_x;
       first_time = true;
     }
     else{
-      velocity += (prev_accel + linear_accel_x) * 0.5 * (micros() - prev_time) * 10^-6;
-      prev_time = micros()
+      velocity += (prev_accel + linear_accel_x) * 0.50 * (micros() - prev_time) * (10^-6);
+      prev_time = micros();
       prev_accel = linear_accel_x;
-      Serial.print("Velocity: ");
-      Serial.println(velocity);
     }
   }
 
@@ -105,13 +113,14 @@ public:
 private:
   Adafruit_BNO08x bno08x;
   sh2_SensorValue_t sensorValue;
+  
   sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
-  long reportIntervalUs = 5000;
+  long report_interval = 5000;
   float linear_accel_x;
   bool first_time = false;
   double velocity = 0;
   float prev_accel;
-  unsigned long prev_time
+  unsigned long prev_time;
 
   frost_interfaces__msg__IMU msg;
 };

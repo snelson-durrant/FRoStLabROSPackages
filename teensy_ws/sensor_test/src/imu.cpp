@@ -21,20 +21,26 @@ struct euler_t {
 Adafruit_BNO08x bno08x;
 sh2_SensorValue_t sensorValue;
 
+float linear_accel_x;
+bool first_time = false;
+double velocity = 0;
+float prev_accel;
+unsigned long prev_time;
+
 void calcultate_velocity(){     //Could make function with pointers so it can calculate all velocities
-    if(!first_time){
-      prev_time = micros();
-      prev_accel = linear_accel_x;
-      first_time = true;
-    }
-    else{
-      velocity += (prev_accel + linear_accel_x) * 0.5 * (micros() - prev_time) * 10^-6;
-      prev_time = micros()
-      prev_accel = linear_accel_x;
-      Serial.print("Velocity: ");
-      Serial.println(velocity);
-    }
+  if(!first_time){
+    prev_time = micros();
+    prev_accel = linear_accel_x;
+    first_time = true;
   }
+  else{
+    velocity += (prev_accel + linear_accel_x) * 0.50 * (micros() - prev_time) * (10^-6);
+    prev_time = micros();
+    prev_accel = linear_accel_x;
+    Serial.print("Velocity: ");
+    Serial.println(velocity);
+  }
+}
         
 void setReports(void) {
     Serial.println("Setting desired reports");

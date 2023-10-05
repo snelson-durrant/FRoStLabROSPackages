@@ -5,6 +5,7 @@
 #include "leak_pub.cpp"
 #include "pressure_pub.cpp"
 #include "voltage_pub.cpp"
+#include "nav_pub.cpp"
 
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>
@@ -53,6 +54,7 @@ HumidityPub humidity_pub;
 LeakPub leak_pub;
 PressurePub pressure_pub;
 IMUPub imu_pub;
+NavPub nav_pub;
 
 // service objects
 GPSSrv gps_srv;
@@ -122,17 +124,22 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   }
 }
 
+void PID_loop(){
+  int servo1_angle = nav_pub.compute_heading(imu_pub.returnYaw());
+  my_servo1.write(servo1_angle);
+}
+
 // micro-Ros function that subscribes to navigation positions
 void subscription_callback(const void *servo_msgin) {
 
-  const frost_interfaces__msg__Nav *servo_msg =
-      (const frost_interfaces__msg__Nav *)servo_msgin;
-  my_servo1.write(servo_msg->servo1);
-  my_servo2.write(servo_msg->servo2);
-  my_servo3.write(servo_msg->servo3);
-  int thrusterValue = map(servo_msg->thruster, LOW_FINAL, HIGH_FINAL,
-                          LOW_INITIAL, HIGH_INITIAL);
-  thruster.writeMicroseconds(thrusterValue);
+  // const frost_interfaces__msg__Nav *servo_msg =
+  //     (const frost_interfaces__msg__Nav *)servo_msgin;
+  // my_servo1.write(servo_msg->servo1);
+  // my_servo2.write(servo_msg->servo2);
+  // my_servo3.write(servo_msg->servo3);
+  // int thrusterValue = map(servo_msg->thruster, LOW_FINAL, HIGH_FINAL,
+  //                         LOW_INITIAL, HIGH_INITIAL);
+  // thruster.writeMicroseconds(thrusterValue);
 }
 
 bool create_entities() {
@@ -156,6 +163,7 @@ bool create_entities() {
   leak_pub.setup(node);
   pressure_pub.setup(node);
   imu_pub.setup(node);
+  nav_pub.setup(node);
 
   // create services
   gps_srv.setup(node);
@@ -201,6 +209,7 @@ void destroy_entities() {
   leak_pub.destroy(node);
   pressure_pub.destroy(node);
   imu_pub.destroy(node);
+  nav_pub.destroy(node);
 
   // destroy services
   gps_srv.destroy(node);
@@ -226,6 +235,7 @@ void setup() {
 
 void loop() {
   imu_pub.imu_update();
+  PID_loop();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
