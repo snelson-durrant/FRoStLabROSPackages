@@ -1,5 +1,6 @@
 #include <Adafruit_BNO08x.h>
 #include <Arduino.h>
+#include <Wire.h>
 
 struct euler_t {
   float yaw;
@@ -55,7 +56,7 @@ void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr
 
 void setup_imu() {
     
-    while(!bno08x.begin_I2C(0x4A,&Wire2)) {
+    while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
         Serial.println(millis());
         delay(10);
