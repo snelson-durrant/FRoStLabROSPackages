@@ -27,7 +27,7 @@ unsigned long prev_time;
 float returnYaw(){return ypr.yaw + 180.00;}
 double returnVel(){return velocity;}
 
-float goal_heading = 15.00;
+float goal_heading = 275;
 // Arbitrary setpoint and gains - adjust these as fit for your project:
 double setpoint = 0;
 double p = 0.7;   //Tune the PID!
