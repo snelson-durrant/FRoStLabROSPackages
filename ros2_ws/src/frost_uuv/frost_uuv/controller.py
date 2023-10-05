@@ -1,10 +1,10 @@
 import rclpy
 from rclpy.node import Node
 from enum import Enum
-from frost_interfaces.msg import Nav, IMU, Depth, Echo, GPS
+from frost_interfaces.msg import PID, IMU, Depth, Echo, GPS
 from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 
-NAV_PUB_TIMER_PERIOD = 1  # seconds
+PID_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
 QOS_PROFILE = 10
 DEFAULT_SERVO = (90, 90, 90)  # out of 180
@@ -30,11 +30,11 @@ class Controller(Node):
         self.aux_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
 
         # Create the publishers
-        self.nav_publisher = self.create_publisher(Nav, "nav_instructions", QOS_PROFILE, callback_group=self.main_callback_group)
+        self.nav_publisher = self.create_publisher(PID, "pid_request", QOS_PROFILE, callback_group=self.main_callback_group)
         self.echo_publisher = self.create_publisher(Echo, "echo_data", QOS_PROFILE, callback_group=self.aux_callback_group)
         self.gps_publisher = self.create_publisher(GPS, "gps_data", QOS_PROFILE, callback_group=self.aux_callback_group)
         self.timer = self.create_timer(
-            NAV_PUB_TIMER_PERIOD, 
+            PID_PUB_TIMER_PERIOD, 
             self.timer_callback, 
             callback_group=self.main_callback_group
         )
@@ -162,7 +162,7 @@ class Controller(Node):
     
     # Runs the state machine and controller, publishes to nav_instructions
     def timer_callback(self):
-        nav_msg = Nav()
+        pid_msg = PID()
 
         if self.state == States.RUN:
             ########################################
@@ -174,27 +174,26 @@ class Controller(Node):
 
             # test
 
-            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
-            nav_msg.thruster = DEFAULT_THRUSTER
+            pid_msg.stop = False
 
-            self.get_logger().info("PUBLISHING TO NAV_INSTRUCTIONS")
+            self.get_logger().info("PUBLISHING TO PID_REQUEST")
 
             ########################################
             # CONTROLLER CODE ENDS HERE
             ########################################
 
         elif self.state == States.STOP:
-            nav_msg.servo1, nav_msg.servo2, nav_msg.servo3 = DEFAULT_SERVO
-            nav_msg.thruster = DEFAULT_THRUSTER
-
-        # Only publish the new nav_instructions values if they change
+            pid_msg.stop = True
+        
+        # TODO: Update the below
+        # Only publish the new pid_request values if they change
         if (
             self.prev_servo1 != nav_msg.servo1
             or self.prev_servo2 != nav_msg.servo2
             or self.prev_servo3 != nav_msg.servo3
             or self.prev_thruster != nav_msg.thruster
         ):
-            nav_msg.header.stamp = Node.get_clock(self).now().to_msg()
+            pid_msg.header.stamp = Node.get_clock(self).now().to_msg()
             self.get_logger().info(
                 "Servos (%d, %d, %d), Thruster (%d)"
                 % (nav_msg.servo1, nav_msg.servo2, nav_msg.servo3, nav_msg.thruster)
