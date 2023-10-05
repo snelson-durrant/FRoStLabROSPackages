@@ -91,6 +91,7 @@ class Controller(Node):
         self.prev_roll = 0
         self.prev_depth = 0
         self.stop = False
+        self.counter = 0
 
     # Updates the recieved IMU data
     # def imu_listener_callback(self, msg):
@@ -186,7 +187,19 @@ class Controller(Node):
             # echo_msg = self.get_echo()
             # gps_msg = self.get_gps()
 
-            pid_msg.stop = False
+            # TODO: Adjust this simple state machine
+            # For a faster update time, adjust PID_PUB_TIMER_PERIOD
+            if (self.counter < 10):
+                pid_msg.msg.velocity = 0
+                pid_msg.msg.yaw = 0
+                pid_msg.msg.pitch = 0
+                pid_msg.msg.roll = 0
+                pid_msg.msg.depth = 0
+                pid_msg.msg.stop = False
+            else:
+                self.state = States.STOP
+
+            self.counter += 1
 
             self.get_logger().info("PUBLISHING TO PID_REQUEST")
 
