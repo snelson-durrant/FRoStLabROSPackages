@@ -6,38 +6,35 @@ class IMUPub : Publisher {
 
 public:
   void setReports(void) {
-
     Serial.println("Setting desired reports");
-    if (!bno08x.enableReport(SH2_ACCELEROMETER)) {
-      Serial.println("Could not enable accelerometer");
-    }
-    if (!bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED)) {
-      Serial.println("Could not enable gyroscope");
-    }
-    if (!bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED)) {
-      Serial.println("Could not enable magnetic field calibrated");
-    }
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial.println("Could not enable linear acceleration");
     }
-    if (!bno08x.enableReport(SH2_GRAVITY)) {
-      Serial.println("Could not enable gravity vector");
+    if (! bno08x.enableReport(reportType, report_interval)) {
+    Serial.println("Could not enable stabilized remote vector");
     }
-    if (!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
-      Serial.println("Could not enable rotation vector");
+  }
+
+  void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees = false) {
+
+    float sqr = sq(qr);
+    float sqi = sq(qi);
+    float sqj = sq(qj);
+    float sqk = sq(qk);
+
+    ypr->yaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr));
+    ypr->pitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr));
+    ypr->roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr));
+
+    if (degrees) {
+      ypr->yaw *= RAD_TO_DEG;
+      ypr->pitch *= RAD_TO_DEG;
+      ypr->roll *= RAD_TO_DEG;
     }
-    if (!bno08x.enableReport(SH2_GEOMAGNETIC_ROTATION_VECTOR)) {
-      Serial.println("Could not enable geomagnetic rotation vector");
-    }
-    if (!bno08x.enableReport(SH2_RAW_ACCELEROMETER)) {
-      Serial.println("Could not enable raw accelerometer");
-    }
-    if (!bno08x.enableReport(SH2_RAW_GYROSCOPE)) {
-      Serial.println("Could not enable raw gyroscope");
-    }
-    if (!bno08x.enableReport(SH2_RAW_MAGNETOMETER)) {
-      Serial.println("Could not enable raw magnetometer");
-    }
+  }
+
+  void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
   }
 
   void setup(rcl_node_t node) {
@@ -57,66 +54,42 @@ public:
       Serial.println("Reading events");
     }
   }
+  void calcultate_velocity(){     //Could make function with pointers so it can calculate all velocities
+    if(!first_time){
+      prev_time = micros();
+      prev_accel = linear_accel_x;
+      first_time = true;
+    }
+    else{
+      velocity += (prev_accel + linear_accel_x) * 0.5 * (micros() - prev_time) * 10^-6;
+      prev_time = micros()
+      prev_accel = linear_accel_x;
+      Serial.print("Velocity: ");
+      Serial.println(velocity);
+    }
+  }
 
   void imu_update() {
     if (bno08x.wasReset()) {
       setReports();
     }
     if (!bno08x.getSensorEvent(&sensorValue)) {
-      return;
-    }
-
-    switch (sensorValue.sensorId) {
-    case SH2_ACCELEROMETER:
-      msg.accel_x = sensorValue.un.accelerometer.x;
-      msg.accel_y = sensorValue.un.accelerometer.y;
-      msg.accel_z = sensorValue.un.accelerometer.z;
-      break;
-    case SH2_GYROSCOPE_CALIBRATED:
-      msg.gyro_x = sensorValue.un.gyroscope.x;
-      msg.gyro_y = sensorValue.un.gyroscope.y;
-      msg.gyro_z = sensorValue.un.gyroscope.z;
-      break;
-    case SH2_MAGNETIC_FIELD_CALIBRATED:
-      msg.mag_x = sensorValue.un.magneticField.x;
-      msg.mag_y = sensorValue.un.magneticField.y;
-      msg.mag_z = sensorValue.un.magneticField.z;
-      break;
-    case SH2_LINEAR_ACCELERATION:
-      msg.lin_accel_x = sensorValue.un.linearAcceleration.x;
-      msg.lin_accel_y = sensorValue.un.linearAcceleration.y;
-      msg.lin_accel_z = sensorValue.un.linearAcceleration.z;
-      break;
-    case SH2_GRAVITY:
-      msg.grav_x = sensorValue.un.gravity.x;
-      msg.grav_y = sensorValue.un.gravity.y;
-      msg.grav_z = sensorValue.un.gravity.z;
-      break;
-    case SH2_ROTATION_VECTOR:
-      msg.rot_vec_i = sensorValue.un.rotationVector.i;
-      msg.rot_vec_j = sensorValue.un.rotationVector.j;
-      msg.rot_vec_k = sensorValue.un.rotationVector.k;
-      break;
-    case SH2_GEOMAGNETIC_ROTATION_VECTOR:
-      msg.geomag_rot_vec_i = sensorValue.un.geoMagRotationVector.i;
-      msg.geomag_rot_vec_j = sensorValue.un.geoMagRotationVector.j;
-      msg.geomag_rot_vec_k = sensorValue.un.geoMagRotationVector.k;
-      break;
-    case SH2_RAW_ACCELEROMETER:
-      msg.raw_accel_x = sensorValue.un.rawAccelerometer.x;
-      msg.raw_accel_y = sensorValue.un.rawAccelerometer.y;
-      msg.raw_accel_z = sensorValue.un.rawAccelerometer.z;
-      break;
-    case SH2_RAW_GYROSCOPE:
-      msg.raw_gyro_x = sensorValue.un.rawGyroscope.x;
-      msg.raw_gyro_y = sensorValue.un.rawGyroscope.y;
-      msg.raw_gyro_z = sensorValue.un.rawGyroscope.z;
-      break;
-    case SH2_RAW_MAGNETOMETER:
-      msg.raw_mag_x = sensorValue.un.rawMagnetometer.x;
-      msg.raw_mag_y = sensorValue.un.rawMagnetometer.y;
-      msg.raw_mag_z = sensorValue.un.rawMagnetometer.z;
-      break;
+      switch (sensorValue.sensorId) {
+      case SH2_LINEAR_ACCELERATION:
+        msg.lin_accel_x = sensorValue.un.linearAcceleration.x;
+        linear_accel_x = sensorValue.un.linearAcceleration.x;
+        msg.lin_accel_y = sensorValue.un.linearAcceleration.y;
+        msg.lin_accel_z = sensorValue.un.linearAcceleration.z;
+        calculate_velocity();
+        msg.mag_x = velocity;
+        break;
+      case SH2_ARVR_STABILIZED_RV:
+        quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
+        msg.gyro_x = ypr.yaw;
+        msg.gyro_y = ypr.pitch;
+        msg.gyro_z = ypr.roll;
+        break;
+      }
     }
   }
 
@@ -131,6 +104,13 @@ public:
 private:
   Adafruit_BNO08x bno08x;
   sh2_SensorValue_t sensorValue;
+  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+  long reportIntervalUs = 5000;
+  float linear_accel_x;
+  bool first_time = false;
+  double velocity = 0;
+  float prev_accel;
+  unsigned long prev_time
 
   frost_interfaces__msg__IMU msg;
 };
