@@ -20,20 +20,19 @@ class PIController:
         self.integral = 0.0
 
     def compute_heading(self, goal, current):
-        current += 180
         if goal > current:
             if (360 - goal + current) < (goal - current):
-                print("turn left")
+                # print("turn left")
                 error = -1 * (360 - goal + current)
             else:
-                print("turn right")
+                # print("turn right")
                 error = goal-current
         else:
             if (360 - current + goal) < (current - goal):
-                print("turn right h")
+                # print("turn right h")
                 error = 360 - current + goal
             else:
-                print("turn left h")
+                # print("turn left h")
                 error = goal - current
 
         # Calculate the integral term
@@ -47,6 +46,10 @@ class PIController:
         
         # Calculate the control signal (output)
         pi_value = self.kp * error + self.ki * self.integral
+        # self.get_logger().info("error")
+        # self.get_logger().info(str(error))
+        # self.get_logger().info("Integral")
+        # self.get_logger().info(str(self.integral))
         output = 90 + pi_value
         
         # Apply output limits
@@ -88,12 +91,12 @@ max_output_thruster = 100  # Maximum control signal
 velocityPI = PIController(kp_velocity, ki_velocity, min_output_thruster, max_output_thruster)
 goal_velocity = 50  # Replace with your desired goal velocity
 
-kp_heading = 0.1  # Proportional gain
+kp_heading = 0.3  # Proportional gain
 ki_heading = 0.01  # Integral gain
 min_output_servo = 45  # Minimum control signal
 max_output_servo = 135  # Maximum control signal
 headingPI = PIController(kp_heading, ki_heading, min_output_servo, max_output_servo)
-goal_heading = 50  # Replace with your desired goal velocity
+goal_heading = 50  # Replace with your desired goal heading 0-360
 
 NAV_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
@@ -184,7 +187,9 @@ class Controller(Node):
 
 
     def calculate_heading(self):
-        self.heading = atan2(self.imu_mag_y, self.imu_mag_x) * 180.0 / pi
+        self.heading = 180 + (atan2(self.imu_mag_y, self.imu_mag_x) * 180.0 / pi)
+        self.get_logger().info("Heading")
+        self.get_logger().info(str(self.heading))
 
     
     # Updates the recieved IMU data
@@ -221,11 +226,11 @@ class Controller(Node):
         self.imu_raw_mag_z = msg.raw_mag_z
         
         self.calculate_velocityx(msg.header.stamp.sec + msg.header.stamp.nanosec*10**-9)
-        self.get_logger().info("Velocity X")
-        self.get_logger().info(str(self.velocityx))
+        # self.get_logger().info("Velocity X")
+        # self.get_logger().info(str(self.velocityx))
         self.calculate_heading()
-        self.get_logger().info("Heading")
-        self.get_logger().info(str(self.heading))
+        # self.get_logger().info("Heading")
+        # self.get_logger().info(str(self.heading))
 
     # Updates the recieved pressure sensor data
     def depth_listener_callback(self, msg):
@@ -291,12 +296,12 @@ class Controller(Node):
             control_signal = velocityPI.compute(goal_velocity, self.velocityx)
             top_fin_control = headingPI.compute_heading(goal_heading, self.heading)
             nav_msg.servo1 = int(top_fin_control)
-            self.get_logger().info("Servo Signal: ")
-            self.get_logger().info(str(top_fin_control))
+            # self.get_logger().info("Servo Signal: ")
+            # self.get_logger().info(str(nav_msg.servo1))
             nav_msg.servo2, nav_msg.servo3 = (90, 90)
             nav_msg.thruster = int(control_signal)
-            self.get_logger().info("Control Signal: ")
-            self.get_logger().info(str(control_signal))
+            # self.get_logger().info("Control Signal: ")
+            # self.get_logger().info(str(control_signal))
 
             self.get_logger().info("PUBLISHING TO NAV_INSTRUCTIONS")
 
