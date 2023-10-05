@@ -7,8 +7,6 @@ from frost_interfaces.srv import EmergencyStop, GetEcho, GetGPS
 PID_PUB_TIMER_PERIOD = 1  # seconds
 SERVICE_TIMEOUT = 1  # seconds
 QOS_PROFILE = 10
-DEFAULT_SERVO = (90, 90, 90)  # out of 180
-DEFAULT_THRUSTER = 0  # out of 100
 ECHO_REQ = GetEcho.Request()
 GPS_REQ = GetGPS.Request()
 
@@ -26,36 +24,44 @@ class Controller(Node):
         # Create the callback groups
         # main_callback_group - functions outside of the timer callback loop
         # aux_callback_group - functions inside of the timer callback loop
-        self.main_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        self.main_callback_group = (
+            rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        )
         self.aux_callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
 
         # Create the publishers
-        self.nav_publisher = self.create_publisher(PID, "pid_request", QOS_PROFILE, callback_group=self.main_callback_group)
-        self.echo_publisher = self.create_publisher(Echo, "echo_data", QOS_PROFILE, callback_group=self.aux_callback_group)
-        self.gps_publisher = self.create_publisher(GPS, "gps_data", QOS_PROFILE, callback_group=self.aux_callback_group)
+        self.nav_publisher = self.create_publisher(
+            PID, "pid_request", QOS_PROFILE, callback_group=self.main_callback_group
+        )
+        self.echo_publisher = self.create_publisher(
+            Echo, "echo_data", QOS_PROFILE, callback_group=self.aux_callback_group
+        )
+        self.gps_publisher = self.create_publisher(
+            GPS, "gps_data", QOS_PROFILE, callback_group=self.aux_callback_group
+        )
         self.timer = self.create_timer(
-            PID_PUB_TIMER_PERIOD, 
-            self.timer_callback, 
-            callback_group=self.main_callback_group
+            PID_PUB_TIMER_PERIOD,
+            self.timer_callback,
+            callback_group=self.main_callback_group,
         )
 
         # Create the subscriptions
-        self.imu_subscription = self.create_subscription(
-            IMU,
-            "imu_data",
-            self.imu_listener_callback,
-            QOS_PROFILE,
-            callback_group=self.main_callback_group,
-        )
-        self.imu_subscription  # prevent unused variable warning
-        self.depth_subscription = self.create_subscription(
-            Depth,
-            "depth_data",
-            self.depth_listener_callback,
-            QOS_PROFILE,
-            callback_group=self.main_callback_group,
-        )
-        self.depth_subscription  # prevent unused variable warning
+        # self.imu_subscription = self.create_subscription(
+        #     IMU,
+        #     "imu_data",
+        #     self.imu_listener_callback,
+        #     QOS_PROFILE,
+        #     callback_group=self.main_callback_group,
+        # )
+        # self.imu_subscription  # prevent unused variable warning
+        # self.depth_subscription = self.create_subscription(
+        #     Depth,
+        #     "depth_data",
+        #     self.depth_listener_callback,
+        #     QOS_PROFILE,
+        #     callback_group=self.main_callback_group,
+        # )
+        # self.depth_subscription  # prevent unused variable warning
 
         # Create the services
         self.srv = self.create_service(
@@ -66,10 +72,14 @@ class Controller(Node):
         )
 
         # Create the clients
-        self.echo_cli = self.create_client(GetEcho, "echo_service", callback_group=self.aux_callback_group)
+        self.echo_cli = self.create_client(
+            GetEcho, "echo_service", callback_group=self.aux_callback_group
+        )
         while not self.echo_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("Echo service not available, waiting...")
-        self.gps_cli = self.create_client(GetGPS, "gps_service", callback_group=self.aux_callback_group)
+        self.gps_cli = self.create_client(
+            GetGPS, "gps_service", callback_group=self.aux_callback_group
+        )
         while not self.gps_cli.wait_for_service(timeout_sec=SERVICE_TIMEOUT):
             self.get_logger().info("GPS service not available, waiting...")
 
@@ -83,43 +93,43 @@ class Controller(Node):
         self.stop = False
 
     # Updates the recieved IMU data
-    def imu_listener_callback(self, msg):
-        self.imu_accel_x = msg.accel_x
-        self.imu_accel_y = msg.accel_y
-        self.imu_accel_z = msg.accel_z
-        self.imu_gyro_x = msg.gyro_x
-        self.imu_gyro_y = msg.gyro_y
-        self.imu_gyro_z = msg.gyro_z
-        self.imu_mag_x = msg.mag_x
-        self.imu_mag_y = msg.mag_y
-        self.imu_mag_z = msg.mag_z
-        self.imu_lin_accel_x = msg.lin_accel_x
-        self.imu_lin_accel_y = msg.lin_accel_y
-        self.imu_lin_accel_z = msg.lin_accel_z
-        self.imu_grav_x = msg.grav_x
-        self.imu_grav_y = msg.grav_y
-        self.imu_grav_z = msg.grav_z
-        self.imu_rot_vec_i = msg.rot_vec_i
-        self.imu_rot_vec_j = msg.rot_vec_j
-        self.imu_rot_vec_k = msg.rot_vec_k
-        self.imu_geomag_rot_vec_i = msg.geomag_rot_vec_i
-        self.imu_geomag_rot_vec_j = msg.geomag_rot_vec_j
-        self.imu_geomag_rot_vec_k = msg.geomag_rot_vec_k
-        self.imu_raw_accel_x = msg.raw_accel_x
-        self.imu_raw_accel_y = msg.raw_accel_y
-        self.imu_raw_accel_z = msg.raw_accel_z
-        self.imu_raw_gyro_x = msg.raw_gyro_x
-        self.imu_raw_gyro_y = msg.raw_gyro_y
-        self.imu_raw_gyro_z = msg.raw_gyro_z
-        self.imu_raw_mag_x = msg.raw_mag_x
-        self.imu_raw_mag_y = msg.raw_mag_y
-        self.imu_raw_mag_z = msg.raw_mag_z
+    # def imu_listener_callback(self, msg):
+    #     self.imu_accel_x = msg.accel_x
+    #     self.imu_accel_y = msg.accel_y
+    #     self.imu_accel_z = msg.accel_z
+    #     self.imu_gyro_x = msg.gyro_x
+    #     self.imu_gyro_y = msg.gyro_y
+    #     self.imu_gyro_z = msg.gyro_z
+    #     self.imu_mag_x = msg.mag_x
+    #     self.imu_mag_y = msg.mag_y
+    #     self.imu_mag_z = msg.mag_z
+    #     self.imu_lin_accel_x = msg.lin_accel_x
+    #     self.imu_lin_accel_y = msg.lin_accel_y
+    #     self.imu_lin_accel_z = msg.lin_accel_z
+    #     self.imu_grav_x = msg.grav_x
+    #     self.imu_grav_y = msg.grav_y
+    #     self.imu_grav_z = msg.grav_z
+    #     self.imu_rot_vec_i = msg.rot_vec_i
+    #     self.imu_rot_vec_j = msg.rot_vec_j
+    #     self.imu_rot_vec_k = msg.rot_vec_k
+    #     self.imu_geomag_rot_vec_i = msg.geomag_rot_vec_i
+    #     self.imu_geomag_rot_vec_j = msg.geomag_rot_vec_j
+    #     self.imu_geomag_rot_vec_k = msg.geomag_rot_vec_k
+    #     self.imu_raw_accel_x = msg.raw_accel_x
+    #     self.imu_raw_accel_y = msg.raw_accel_y
+    #     self.imu_raw_accel_z = msg.raw_accel_z
+    #     self.imu_raw_gyro_x = msg.raw_gyro_x
+    #     self.imu_raw_gyro_y = msg.raw_gyro_y
+    #     self.imu_raw_gyro_z = msg.raw_gyro_z
+    #     self.imu_raw_mag_x = msg.raw_mag_x
+    #     self.imu_raw_mag_y = msg.raw_mag_y
+    #     self.imu_raw_mag_z = msg.raw_mag_z
 
     # Updates the recieved pressure sensor data
-    def depth_listener_callback(self, msg):
-        self.depth_pressure = msg.pressure
-        self.depth_depth = msg.depth
-        self.depth_temperature = msg.temperature
+    # def depth_listener_callback(self, msg):
+    #     self.depth_pressure = msg.pressure
+    #     self.depth_depth = msg.depth
+    #     self.depth_temperature = msg.temperature
 
     # Sets the state machine to STOP when EmergencyStop is requested
     def emergency_stop_callback(self, request, response):
@@ -128,7 +138,7 @@ class Controller(Node):
         self.state = States.STOP
         response.stopped = True
         return response
-    
+
     # Gets the echo data from the echo service and publishes it
     def get_echo(self):
         echo_msg = Echo()
@@ -145,7 +155,7 @@ class Controller(Node):
         self.echo_publisher.publish(echo_msg)
 
         return echo_msg
-    
+
     # Gets the gps data from the gps service and publishes it
     def get_gps(self):
         gps_msg = GPS()
@@ -154,7 +164,7 @@ class Controller(Node):
         while not self.gps_future.done():
             pass
         current_gps = self.gps_future.result()
-        
+
         gps_msg.header = current_gps.header
         gps_msg.latitude = current_gps.latitude
         gps_msg.longitude = current_gps.longitude
@@ -163,15 +173,15 @@ class Controller(Node):
         self.gps_publisher.publish(gps_msg)
 
         return gps_msg
-    
-    # Runs the state machine and controller, publishes to nav_instructions
+
+    # Runs the state machine and high-level controller, publishes to pid_request
     def timer_callback(self):
         pid_msg = PID()
 
         if self.state == States.RUN:
-            ########################################
+            ###############################################
             # HIGH-LEVEL CONTROLLER CODE STARTS HERE
-            ########################################
+            ###############################################
 
             # echo_msg = self.get_echo()
             # gps_msg = self.get_gps()
@@ -180,9 +190,9 @@ class Controller(Node):
 
             self.get_logger().info("PUBLISHING TO PID_REQUEST")
 
-            ########################################
+            ###############################################
             # HIGH-LEVEL CONTROLLER CODE ENDS HERE
-            ########################################
+            ###############################################
 
         elif self.state == States.STOP:
             pid_msg.velocity = 0
@@ -191,7 +201,7 @@ class Controller(Node):
             pid_msg.roll = 0
             pid_msg.depth = 0
             pid_msg.stop = True
-        
+
         # TODO: Update the below
         # Only publish the new pid_request values if they change
         if (
@@ -205,7 +215,13 @@ class Controller(Node):
             pid_msg.header.stamp = Node.get_clock(self).now().to_msg()
             self.get_logger().info(
                 "Velocity (%d), Heading (%d, %d, %d), Depth (%d)"
-                % (pid_msg.velocity, pid_msg.yaw, pid_msg.pitch, pid_msg.roll, pid_msg.depth)
+                % (
+                    pid_msg.velocity,
+                    pid_msg.yaw,
+                    pid_msg.pitch,
+                    pid_msg.roll,
+                    pid_msg.depth,
+                )
             )
             self.nav_publisher.publish(pid_msg)
 
@@ -215,7 +231,6 @@ class Controller(Node):
         self.prev_roll = pid_msg.roll
         self.prev_depth = pid_msg.depth
         self.stop = pid_msg.stop
-        
 
 
 def main(args=None):
