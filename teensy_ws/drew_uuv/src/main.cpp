@@ -5,10 +5,10 @@
 #include "leak_pub.cpp"
 #include "pressure_pub.cpp"
 #include "voltage_pub.cpp"
-#include "nav_pub.cpp"
 
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>
+#include <frost_interfaces/msg/pid.h>
 
 #define EXECUTE_EVERY_N_MS(MS, X)                                              \
   do {                                                                         \
@@ -45,8 +45,12 @@ rcl_allocator_t allocator;
 rcl_node_t node;
 rclc_executor_t executor;
 rcl_subscription_t subscriber;
+rcl_publisher_t pid_publisher;
+rcl_publisher_t nav_publisher;
 rcl_timer_t timer;
-frost_interfaces__msg__Nav msg;
+frost_interfaces__msg__PID pid_nav_msg;
+frost_interfaces__msg__PID pid_ex_msg;
+frost_interfaces__msg__PID *pid_request_msg;
 
 // publisher objects
 VoltagePub voltage_pub;
@@ -54,7 +58,6 @@ HumidityPub humidity_pub;
 LeakPub leak_pub;
 PressurePub pressure_pub;
 IMUPub imu_pub;
-NavPub nav_pub;
 
 // service objects
 GPSSrv gps_srv;
@@ -124,22 +127,9 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   }
 }
 
-void PID_loop(){
-  int servo1_angle = nav_pub.compute_heading(imu_pub.returnYaw());
-  my_servo1.write(servo1_angle);
-}
-
 // micro-Ros function that subscribes to navigation positions
-void subscription_callback(const void *servo_msgin) {
-
-  // const frost_interfaces__msg__Nav *servo_msg =
-  //     (const frost_interfaces__msg__Nav *)servo_msgin;
-  // my_servo1.write(servo_msg->servo1);
-  // my_servo2.write(servo_msg->servo2);
-  // my_servo3.write(servo_msg->servo3);
-  // int thrusterValue = map(servo_msg->thruster, LOW_FINAL, HIGH_FINAL,
-  //                         LOW_INITIAL, HIGH_INITIAL);
-  // thruster.writeMicroseconds(thrusterValue);
+void subscription_callback(const void *pid_msgin) {
+  *pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
 }
 
 bool create_entities() {
@@ -163,7 +153,6 @@ bool create_entities() {
   leak_pub.setup(node);
   pressure_pub.setup(node);
   imu_pub.setup(node);
-  nav_pub.setup(node);
 
   // create services
   gps_srv.setup(node);
@@ -172,8 +161,18 @@ bool create_entities() {
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
       &subscriber, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav),
-      "nav_instructions"));
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, pid_ex_msg, PID),
+      "pid_request"));
+
+  // create publishers
+  RCCHECK(rclc_publisher_init_default(
+      &pid_publisher, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, pid_ex_msg, PID),
+      "pid_actual"));
+  RCCHECK(rclc_publisher_init_default(
+      &nav_publisher, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, nav_ex_msg, Nav),
+      "nav_commands"));
 
   // create timer (handles periodic publications)
   RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(TIMER_PERIOD),
@@ -209,7 +208,6 @@ void destroy_entities() {
   leak_pub.destroy(node);
   pressure_pub.destroy(node);
   imu_pub.destroy(node);
-  nav_pub.destroy(node);
 
   // destroy services
   gps_srv.destroy(node);
@@ -217,6 +215,8 @@ void destroy_entities() {
 
   // destroy everything else
   rcl_subscription_fini(&subscriber, &node);
+  rcl_publisher_fini(&pid_publisher, &node);
+  rcl_publisher_fini(&nav_publisher, &node);
   rcl_timer_fini(&timer);
   rclc_executor_fini(&executor);
   rcl_node_fini(&node);
@@ -233,9 +233,50 @@ void setup() {
   state = WAITING_AGENT;
 }
 
+void run_pid() {
+
+  frost_interfaces__msg__Nav nav_msg;
+  frost_interfaces__msg__PID pid_actual_msg;
+
+  //////////////////////////////////////////////////////////
+  // LOW-LEVEL CONTROLLER CODE STARTS HERE
+  //////////////////////////////////////////////////////////
+
+  // TODO: add PID stuff here
+  // reference desired values using pid_desired_msg->velocity,
+  // pid_desired_msg->yaw, etc
+
+  // TODO: publish these variables as we calculate them
+  pid_actual_msg.velocity = 0;
+  pid_actual_msg.yaw = 0;
+  pid_actual_msg.pitch = 0;
+  pid_actual_msg.roll = 0;
+  pid_actual_msg.depth = 0;
+  nav_actual_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+  RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+
+  // TODO: use this code to write to the servos and thruster
+  my_servo1.write(90);
+  my_servo2.write(90);
+  my_servo3.write(90);
+  int thrusterValue = map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
+  thruster.writeMicroseconds(thrusterValue);
+
+  // TODO: publish these variables as we write them
+  nav_msg.servo1 = 0;
+  nav_msg.servo2 = 0;
+  nav_msg.servo3 = 0;
+  nav_msg.thruster = 0;
+  nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+  RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+
+  //////////////////////////////////////////////////////////
+  // LOW-LEVEL CONTROLLER CODE ENDS HERE
+  //////////////////////////////////////////////////////////
+}
+
 void loop() {
   imu_pub.imu_update();
-  PID_loop();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
@@ -257,6 +298,7 @@ void loop() {
                                         ? AGENT_CONNECTED
                                         : AGENT_DISCONNECTED;);
     if (state == AGENT_CONNECTED) {
+      run_pid();
       rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
     break;

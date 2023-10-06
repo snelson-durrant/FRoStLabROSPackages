@@ -189,7 +189,7 @@ class Controller(Node):
 
             # TODO: Adjust this simple state machine
             # For a faster update time, adjust PID_PUB_TIMER_PERIOD
-            if (self.counter < 10):
+            if self.counter < 10:
                 pid_msg.msg.velocity = 0
                 pid_msg.msg.yaw = 0
                 pid_msg.msg.pitch = 0

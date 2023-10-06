@@ -17,12 +17,13 @@ public:
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial.println("Could not enable linear acceleration");
     }
-    if (! bno08x.enableReport(reportType, report_interval)) {
-    Serial.println("Could not enable stabilized remote vector");
+    if (!bno08x.enableReport(reportType, report_interval)) {
+      Serial.println("Could not enable stabilized remote vector");
     }
   }
 
-  void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees = false) {
+  void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t *ypr,
+                         bool degrees = false) {
 
     float sqr = sq(qr);
     float sqi = sq(qi);
@@ -40,8 +41,10 @@ public:
     }
   }
 
-  void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false) {
-    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
+  void quaternionToEulerRV(sh2_RotationVectorWAcc_t *rotational_vector,
+                           euler_t *ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i,
+                      rotational_vector->j, rotational_vector->k, ypr, degrees);
   }
 
   void setup(rcl_node_t node) {
@@ -62,17 +65,18 @@ public:
     }
   }
 
-  float returnYaw(){return ypr.yaw + 180.00;}
-  double returnVel(){return velocity;}
+  float returnYaw() { return ypr.yaw + 180.00; }
+  double returnVel() { return velocity; }
 
-  void calculate_velocity(){     //Could make function with pointers so it can calculate all velocities
-    if(!first_time){
+  void calculate_velocity() { // Could make function with pointers so it can
+                              // calculate all velocities
+    if (!first_time) {
       prev_time = micros();
       prev_accel = linear_accel_x;
       first_time = true;
-    }
-    else{
-      velocity += (prev_accel + linear_accel_x) * 0.50 * (micros() - prev_time) * (10^-6);
+    } else {
+      velocity += (prev_accel + linear_accel_x) * 0.50 *
+                  (micros() - prev_time) * (10 ^ -6);
       prev_time = micros();
       prev_accel = linear_accel_x;
     }
@@ -113,7 +117,7 @@ public:
 private:
   Adafruit_BNO08x bno08x;
   sh2_SensorValue_t sensorValue;
-  
+
   sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
   long report_interval = 5000;
   float linear_accel_x;
