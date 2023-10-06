@@ -131,7 +131,7 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   }
 }
 
-// micro-Ros function that subscribes to navigation positions
+// micro-Ros function that subscribes to requested PID values
 void subscription_callback(const void *pid_msgin) {
   pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
 }
@@ -254,7 +254,7 @@ void run_pid() {
 
     // TODO: add PID stuff here
 
-    // reference desired values using pid_request_msg->velocity,
+    // reference wanted values using pid_request_msg->velocity,
     // pid_request_msg->yaw, etc
 
     // use custom functions from imu_pub and depth_pub to get values
