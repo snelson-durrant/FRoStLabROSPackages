@@ -48,10 +48,10 @@ rcl_subscription_t subscriber;
 rcl_publisher_t pid_publisher;
 rcl_publisher_t nav_publisher;
 rcl_timer_t timer;
-frost_interfaces__msg__PID pid_ex_msg;
+frost_interfaces__msg__PID msg;
 frost_interfaces__msg__Nav nav_msg;
 frost_interfaces__msg__PID pid_actual_msg;
-// TODO: does this even work?
+// TODO: definitely test the below
 frost_interfaces__msg__PID *pid_request_msg = new frost_interfaces__msg__PID;
 
 // publisher objects
@@ -195,7 +195,7 @@ bool create_entities() {
                                         &echo_srv.msgReq, &echo_srv.msgRes,
                                         echo_service_callback));
   RCSOFTCHECK(rclc_executor_add_subscription(
-      &executor, &subscriber, &pid_ex_msg, &subscription_callback, ON_NEW_DATA));
+      &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
   Serial.print("end setup\n");
 
@@ -235,11 +235,11 @@ void setup() {
   imu_pub.imu_setup();
 
   // set default expected values
-  pid_request_msg->velocity = 0;
-  pid_request_msg->yaw = 0;
-  pid_request_msg->pitch = 0;
-  pid_request_msg->roll = 0;
-  pid_request_msg->depth = 0;
+  pid_request_msg->velocity = 0.0;
+  pid_request_msg->yaw = 0.0;
+  pid_request_msg->pitch = 0.0;
+  pid_request_msg->roll = 0.0;
+  pid_request_msg->depth = 0.0;
 
   state = WAITING_AGENT;
 }
@@ -250,34 +250,42 @@ void run_pid() {
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
-  // TODO: add PID stuff here
+  if (pid_request_msg->stop == false) {
 
-  // reference desired values using pid_desired_msg->velocity,
-  // pid_desired_msg->yaw, etc
+    // TODO: add PID stuff here
 
-  // use custom functions from imu_pub and depth_pub to get values
+    // reference desired values using pid_request_msg->velocity,
+    // pid_request_msg->yaw, etc
 
-  // TODO: update these variables as we calculate them
-  pid_actual_msg.velocity = 0;
-  pid_actual_msg.yaw = 0;
-  pid_actual_msg.pitch = 0;
-  pid_actual_msg.roll = 0;
-  pid_actual_msg.depth = 0;
-  pid_actual_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+    // use custom functions from imu_pub and depth_pub to get values
+    
+    // TODO: update these variables as we calculate them
+    pid_actual_msg.velocity = 0.0;
+    pid_actual_msg.yaw = 0.0;
+    pid_actual_msg.pitch = 0.0;
+    pid_actual_msg.roll = 0.0;
+    pid_actual_msg.depth = 0.0;
+    pid_actual_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
 
-  // TODO: use this code to write to the servos and thruster
-  my_servo1.write(90);
-  my_servo2.write(90);
-  my_servo3.write(90);
-  int thrusterValue = map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
-  thruster.writeMicroseconds(thrusterValue);
+    nav_msg.servo1 = 0;
+    nav_msg.servo2 = 0;
+    nav_msg.servo3 = 0;
+    nav_msg.thruster = 0;
+    nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
 
-  // TODO: update these variables as we write them
-  nav_msg.servo1 = 0;
-  nav_msg.servo2 = 0;
-  nav_msg.servo3 = 0;
-  nav_msg.thruster = 0;
-  nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
+    // TODO: use this code to write to the servos and thruster
+    my_servo1.write(90);
+    my_servo2.write(90);
+    my_servo3.write(90);
+    int thrusterValue = map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
+    thruster.writeMicroseconds(thrusterValue);
+  } else {
+
+    my_servo1.write(DEFAULT_SERVO);
+    my_servo2.write(DEFAULT_SERVO);
+    my_servo3.write(DEFAULT_SERVO);
+    thruster.writeMicroseconds(DEFAULT_THRUSTER);
+  }
 
   //////////////////////////////////////////////////////////
   // LOW-LEVEL CONTROLLER CODE ENDS HERE
