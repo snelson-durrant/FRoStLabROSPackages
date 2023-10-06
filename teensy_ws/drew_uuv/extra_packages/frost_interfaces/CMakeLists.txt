@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Humid.msg"
   "msg/Volt.msg"
   "msg/Leak.msg"
+  "msg/PID.msg"
   "srv/EmergencyStop.srv"
   "srv/GetEcho.srv"
   "srv/GetGPS.srv"
