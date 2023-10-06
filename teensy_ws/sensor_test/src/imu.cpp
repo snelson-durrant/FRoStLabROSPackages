@@ -5,7 +5,10 @@
 #include <Servo.h>
 #define SERVO_PIN1 9
 Servo my_servo;
+Servo my_thruster; 
 PID_Control Heading;
+PID_Control Velocity; 
+
 float input;
 float output;
 
@@ -19,10 +22,12 @@ Adafruit_BNO08x bno08x;
 sh2_SensorValue_t sensorValue;
 
 float linear_accel_x;
-bool first_time = false;
+int n_time = 0;
 double velocity = 0;
-float prev_accel;
-unsigned long prev_time;
+float prev_accel_1 = 0;
+float prev_accel_2 = 0;
+unsigned long prev_time_1 = 0;
+unsigned long prev_time_2 = 0;
 
 float returnYaw(){return ypr.yaw + 180.00;}
 double returnVel(){return velocity;}
@@ -30,14 +35,24 @@ double returnVel(){return velocity;}
 float goal_heading = 275;
 // Arbitrary setpoint and gains - adjust these as fit for your project:
 double setpoint = 0;
-double p = 0.4;   //Tune the PID!
-double i = 0.1;
+double p = 0.2;   //Tune the PID!
+double i = 0.05;
 double d = 0.5;
+
+float goal_heading = 3.0;
+// Arbitrary setpoint and gains - adjust these as fit for your project:
+double setpoint = 0;
+double pv = 0.4;   //Tune the PID!
+double iv = 0.2;
+double dv = 0.5;
 
 void setup_PID(){
   my_servo.attach(SERVO_PIN1);
   my_servo.write(90);
   Heading.begin(p,i,45, 135, 90);
+  my_thruster.attach(THRUSTER_PIN);
+  my_thruster.write(90);
+  Velocity.begin(pv, iv, 0, 100);
 }
 
 int compute_heading(float heading_curr){          //TODO: Make the parameter a pointer directly to the heading 
@@ -68,10 +83,12 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
   }
 
 void PID_loop(){
-  int servo1_angle = compute_heading(returnYaw());
+  int servo1_angle = compute_heading(returnYaw());      //TODO: make this with pointers
   Serial.print("Servo Angle: ");
   Serial.println(servo1_angle);
   my_servo.write(servo1_angle);
+
+  int thruster = compute_velocity(returnVel());
 }
 
 //#define FAST_MODE
@@ -87,16 +104,24 @@ void PID_loop(){
 
 
 
-void calcultate_velocity(){     //Could make function with pointers so it can calculate all velocities
-  if(!first_time){
-    prev_time = micros();
-    prev_accel = linear_accel_x;
-    first_time = true;
+void calculate_velocity(){     //Could make function with pointers so it can calculate all velocities
+  if(n_time < 2){
+    prev_time_2 = prev_time_1;
+    prev_time_1 = micros();
+    prev_accel_2 = prev_accel_1;
+    prev_accel_1 = linear_accel_x;
+    n_time++;
   }
   else{
-    velocity += (prev_accel + linear_accel_x) * 0.50 * (micros() - prev_time) * (10^-6);
-    prev_time = micros();
-    prev_accel = linear_accel_x;
+    unsigned long current_time = micros();
+    float delta_time = (current_time - prev_time_2) *1e-6;
+    velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) * delta_time / 6.0;
+    // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;  //trapezoidal
+    // prev_time = micros();
+    // prev_accel = linear_accel_x;
+    prev_time = current_time;
+    prev_accel_2 = prev_accel_1;
+    prev_accel_1 = linear_accel_x;
     Serial.print("Velocity: ");
     Serial.println(velocity);
   }

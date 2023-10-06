@@ -2,8 +2,8 @@
 #define PID
 
 #include <Arduino.h>
-#define INTEGRAL_CAP 4  //4 times the max output
-#define INTEGRAL_ARRAY_SIZE 15 //How big the memory of the integral term
+#define INTEGRAL_CAP 5  //4 times the max output
+#define INTEGRAL_ARRAY_SIZE 20 //How big the memory of the integral term
 
 class PID_Control
 {
