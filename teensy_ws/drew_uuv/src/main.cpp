@@ -48,9 +48,11 @@ rcl_subscription_t subscriber;
 rcl_publisher_t pid_publisher;
 rcl_publisher_t nav_publisher;
 rcl_timer_t timer;
-frost_interfaces__msg__PID pid_nav_msg;
 frost_interfaces__msg__PID pid_ex_msg;
-frost_interfaces__msg__PID *pid_request_msg;
+frost_interfaces__msg__Nav nav_msg;
+frost_interfaces__msg__PID pid_actual_msg;
+// TODO: does this even work?
+frost_interfaces__msg__PID *pid_request_msg = new frost_interfaces__msg__PID;
 
 // publisher objects
 VoltagePub voltage_pub;
@@ -124,12 +126,14 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
     leak_pub.publish();
     pressure_pub.publish();
     imu_pub.publish();
+    RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+    RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
   }
 }
 
 // micro-Ros function that subscribes to navigation positions
 void subscription_callback(const void *pid_msgin) {
-  *pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
+  pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
 }
 
 bool create_entities() {
@@ -161,17 +165,17 @@ bool create_entities() {
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
       &subscriber, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, pid_ex_msg, PID),
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID),
       "pid_request"));
 
   // create publishers
   RCCHECK(rclc_publisher_init_default(
       &pid_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, pid_ex_msg, PID),
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID),
       "pid_actual"));
   RCCHECK(rclc_publisher_init_default(
       &nav_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, nav_ex_msg, Nav),
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav),
       "nav_commands"));
 
   // create timer (handles periodic publications)
@@ -191,7 +195,7 @@ bool create_entities() {
                                         &echo_srv.msgReq, &echo_srv.msgRes,
                                         echo_service_callback));
   RCSOFTCHECK(rclc_executor_add_subscription(
-      &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
+      &executor, &subscriber, &pid_ex_msg, &subscription_callback, ON_NEW_DATA));
 
   Serial.print("end setup\n");
 
@@ -230,30 +234,36 @@ void setup() {
   pin_setup();
   imu_pub.imu_setup();
 
+  // set default expected values
+  pid_request_msg->velocity = 0;
+  pid_request_msg->yaw = 0;
+  pid_request_msg->pitch = 0;
+  pid_request_msg->roll = 0;
+  pid_request_msg->depth = 0;
+
   state = WAITING_AGENT;
 }
 
 void run_pid() {
-
-  frost_interfaces__msg__Nav nav_msg;
-  frost_interfaces__msg__PID pid_actual_msg;
 
   //////////////////////////////////////////////////////////
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
   // TODO: add PID stuff here
+
   // reference desired values using pid_desired_msg->velocity,
   // pid_desired_msg->yaw, etc
 
-  // TODO: publish these variables as we calculate them
+  // use custom functions from imu_pub and depth_pub to get values
+
+  // TODO: update these variables as we calculate them
   pid_actual_msg.velocity = 0;
   pid_actual_msg.yaw = 0;
   pid_actual_msg.pitch = 0;
   pid_actual_msg.roll = 0;
   pid_actual_msg.depth = 0;
-  nav_actual_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-  RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+  pid_actual_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
 
   // TODO: use this code to write to the servos and thruster
   my_servo1.write(90);
@@ -262,13 +272,12 @@ void run_pid() {
   int thrusterValue = map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
   thruster.writeMicroseconds(thrusterValue);
 
-  // TODO: publish these variables as we write them
+  // TODO: update these variables as we write them
   nav_msg.servo1 = 0;
   nav_msg.servo2 = 0;
   nav_msg.servo3 = 0;
   nav_msg.thruster = 0;
   nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
-  RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
 
   //////////////////////////////////////////////////////////
   // LOW-LEVEL CONTROLLER CODE ENDS HERE
