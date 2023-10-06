@@ -196,6 +196,9 @@ bool create_entities() {
   RCSOFTCHECK(rclc_executor_add_subscription(
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
+  // wait for first new data to arrive from pid_request topic
+  pid_request_msg->stop = true;
+
   Serial.print("end setup\n");
 
   return true;
@@ -233,13 +236,6 @@ void setup() {
   pin_setup();
   imu_pub.imu_setup();
 
-  // set default expected values
-  pid_request_msg->velocity = 0.0;
-  pid_request_msg->yaw = 0.0;
-  pid_request_msg->pitch = 0.0;
-  pid_request_msg->roll = 0.0;
-  pid_request_msg->depth = 0.0;
-
   state = WAITING_AGENT;
 }
 
@@ -249,7 +245,7 @@ void run_pid() {
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
-  pid_request_msg->stop = false;
+  // pid_request_msg->stop = false;
   if (pid_request_msg->stop == false) {
 
     // TODO: add PID stuff here
