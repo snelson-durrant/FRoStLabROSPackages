@@ -85,11 +85,11 @@ class Controller(Node):
 
         # Set initial variables
         self.state = States.RUN
-        self.prev_velocity = 0
-        self.prev_yaw = 0
-        self.prev_pitch = 0
-        self.prev_roll = 0
-        self.prev_depth = 0
+        self.prev_velocity = 0.0
+        self.prev_yaw = 0.0
+        self.prev_pitch = 0.0
+        self.prev_roll = 0.0
+        self.prev_depth = 0.0
         self.stop = False
         self.counter = 0
 
@@ -189,13 +189,13 @@ class Controller(Node):
 
             # TODO: Adjust this simple state machine
             # For a faster update time, adjust PID_PUB_TIMER_PERIOD
-            if self.counter < 10:
-                pid_msg.msg.velocity = 0.0
-                pid_msg.msg.yaw = 0.0
-                pid_msg.msg.pitch = 0.0
-                pid_msg.msg.roll = 0.0
-                pid_msg.msg.depth = 0.0
-                pid_msg.msg.stop = False
+            if self.counter < 20:
+                pid_msg.velocity = 0.0
+                pid_msg.yaw = 90.0
+                pid_msg.pitch = 0.0
+                pid_msg.roll = 0.0
+                pid_msg.depth = 0.0
+                pid_msg.stop = False
             else:
                 self.state = States.STOP
 

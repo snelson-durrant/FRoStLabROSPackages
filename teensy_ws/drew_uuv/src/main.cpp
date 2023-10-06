@@ -51,7 +51,6 @@ rcl_timer_t timer;
 frost_interfaces__msg__PID msg;
 frost_interfaces__msg__Nav nav_msg;
 frost_interfaces__msg__PID pid_actual_msg;
-// TODO: definitely test the below
 frost_interfaces__msg__PID *pid_request_msg = new frost_interfaces__msg__PID;
 
 // publisher objects
@@ -250,6 +249,7 @@ void run_pid() {
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
+  pid_request_msg->stop = false;
   if (pid_request_msg->stop == false) {
 
     // TODO: add PID stuff here
