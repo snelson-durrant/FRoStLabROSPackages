@@ -171,7 +171,7 @@ bool create_entities() {
   imu_pub.setup(node);
 
   // create services
-  // gps_srv.setup(node);
+  gps_srv.setup(node);
   echo_srv.setup(node);
 
   // create subscriber
@@ -243,8 +243,9 @@ void setup() {
 
   Serial.begin(BAUD_RATE);
   set_microros_serial_transports(Serial);
-  pin_setup();
   imu_pub.imu_setup();
+  pin_setup();
+
   state = WAITING_AGENT;
 }
 
@@ -349,7 +350,7 @@ void loop() {
     if (state == AGENT_CONNECTED) {
       imu_pub.imu_update();
       run_pid();
-      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+      // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
     }
     break;
 
