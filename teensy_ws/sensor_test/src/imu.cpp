@@ -4,6 +4,7 @@
 #include <PID.h>
 #include <Servo.h>
 #define SERVO_PIN1 9
+#define THRUSTER_PIN 10
 Servo my_servo;
 Servo my_thruster; 
 PID_Control Heading;
@@ -18,7 +19,7 @@ struct euler_t {
   float roll;
 } ypr;
 
-Adafruit_BNO08x bno08x;
+Adafruit_BNO08x bno08x(-1);
 sh2_SensorValue_t sensorValue;
 
 float linear_accel_x;
@@ -39,9 +40,9 @@ double p = 0.2;   //Tune the PID!
 double i = 0.05;
 double d = 0.5;
 
-float goal_heading = 3.0;
+float goal_velocity = 3.0;
 // Arbitrary setpoint and gains - adjust these as fit for your project:
-double setpoint = 0;
+double setpoint_velocity = 0;
 double pv = 0.4;   //Tune the PID!
 double iv = 0.2;
 double dv = 0.5;
@@ -87,8 +88,7 @@ void PID_loop(){
   Serial.print("Servo Angle: ");
   Serial.println(servo1_angle);
   my_servo.write(servo1_angle);
-
-  int thruster = compute_velocity(returnVel());
+  //int thruster = compute_velocity(returnVel());
 }
 
 //#define FAST_MODE
@@ -119,7 +119,8 @@ void calculate_velocity(){     //Could make function with pointers so it can cal
     // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;  //trapezoidal
     // prev_time = micros();
     // prev_accel = linear_accel_x;
-    prev_time = current_time;
+    prev_time_2 = prev_time_1;
+    prev_time_1 = current_time;
     prev_accel_2 = prev_accel_1;
     prev_accel_1 = linear_accel_x;
     Serial.print("Velocity: ");
@@ -192,12 +193,12 @@ void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr
 
 
 void setup_imu() {
-    
-    if(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
+    // Wire2.begin(BNO08x_I2CADDR_DEFAULT);
+    while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
         Serial.println(millis());
         delay(100);
-        bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
+        // bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
     }
 
     Serial.println("BNO08x Found!");
@@ -228,7 +229,7 @@ void loop_imu() {
         Serial.print(sensorValue.un.linearAcceleration.y);
         Serial.print(" z: ");
         Serial.println(sensorValue.un.linearAcceleration.z);
-        calcultate_velocity();
+        calculate_velocity();
         
         break;
       case SH2_ARVR_STABILIZED_RV:

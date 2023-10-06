@@ -4,8 +4,8 @@
 #include <frost_interfaces/srv/get_echo.h>
 
 #define ECHO_RATE 115200
-#define ECHO_RX_PIN 21
-#define ECHO_TX_PIN 20
+#define ECHO_RX_PIN 23
+#define ECHO_TX_PIN 24      // we vhaged this
 
 class EchoSrv : Service {
 public:

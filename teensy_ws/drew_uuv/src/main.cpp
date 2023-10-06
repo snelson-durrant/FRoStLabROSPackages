@@ -1,3 +1,4 @@
+#include "PID.h"
 #include "echo_srv.cpp"
 #include "gps_srv.cpp"
 #include "humidity_pub.cpp"
@@ -24,7 +25,7 @@
 
 #define BAUD_RATE 6000000
 #define CALLBACK_TOTAL 5
-#define TIMER_PERIOD 10
+#define TIMER_PERIOD 2000
 #define SYNC_TIMEOUT 1000
 
 #define LOW_FINAL 0
@@ -70,6 +71,17 @@ Servo my_servo2;
 Servo my_servo3;
 Servo thruster;
 
+// PID Objects
+#define HEADING_P 0.2
+#define HEADING_I 0.05
+PID_Control Heading(HEADING_P, HEADING_I, 45, 135, 90);
+#define VELOCITY_P 0.2
+#define VELOCITY_I 0.05
+PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
+#define DEPTH_P 0.2
+#define DEPTH_I 0.05
+PID_Control Depth(DEPTH_P, DEPTH_I, 45, 135, 90);
+
 // states for statemachine in loop function
 enum states {
   WAITING_AGENT,
@@ -102,6 +114,7 @@ void pin_setup() {
   my_servo2.write(DEFAULT_SERVO);
   my_servo3.write(DEFAULT_SERVO);
   thruster.writeMicroseconds(DEFAULT_THRUSTER);
+  delay(7000);
 }
 
 // "fake function" to allow the service object function to be called
@@ -158,24 +171,21 @@ bool create_entities() {
   imu_pub.setup(node);
 
   // create services
-  gps_srv.setup(node);
+  // gps_srv.setup(node);
   echo_srv.setup(node);
 
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
       &subscriber, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID),
-      "pid_request"));
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_request"));
 
   // create publishers
   RCCHECK(rclc_publisher_init_default(
       &pid_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID),
-      "pid_actual"));
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_actual"));
   RCCHECK(rclc_publisher_init_default(
       &nav_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav),
-      "nav_commands"));
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav), "nav_commands"));
 
   // create timer (handles periodic publications)
   RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(TIMER_PERIOD),
@@ -197,7 +207,7 @@ bool create_entities() {
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
   // wait for first new data to arrive from pid_request topic
-  pid_request_msg->stop = true;
+  // pid_request_msg->stop = true;
 
   Serial.print("end setup\n");
 
@@ -235,8 +245,29 @@ void setup() {
   set_microros_serial_transports(Serial);
   pin_setup();
   imu_pub.imu_setup();
-
   state = WAITING_AGENT;
+}
+
+int compute_heading(float heading_curr,
+                    float goal_heading) { // TODO: Make the parameter a pointer
+                                          // directly to the heading
+  static float input = 0;
+  static float output = 0;
+  if (goal_heading > heading_curr) {
+    if ((360 - goal_heading + heading_curr) < (goal_heading - heading_curr)) {
+      input = -1 * (360 - goal_heading + heading_curr);
+    } else {
+      input = goal_heading - heading_curr;
+    }
+  } else { // add this to nav
+    if ((360 - heading_curr + goal_heading) < (heading_curr - goal_heading)) {
+      input = (360 - heading_curr + goal_heading);
+    } else {
+      input = goal_heading - heading_curr;
+    }
+  }
+  output = Heading.compute(goal_heading, heading_curr);
+  return int(output);
 }
 
 void run_pid() {
@@ -245,7 +276,8 @@ void run_pid() {
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
-  // pid_request_msg->stop = false;
+  pid_request_msg->stop = false;
+  pid_request_msg->yaw = 90.0;
   if (pid_request_msg->stop == false) {
 
     // TODO: add PID stuff here
@@ -254,9 +286,9 @@ void run_pid() {
     // pid_request_msg->yaw, etc
 
     // use custom functions from imu_pub and depth_pub to get values
-    
+
     // TODO: update these variables as we calculate them
-    pid_actual_msg.velocity = 0.0;
+    pid_actual_msg.velocity += 1;
     pid_actual_msg.yaw = 0.0;
     pid_actual_msg.pitch = 0.0;
     pid_actual_msg.roll = 0.0;
@@ -269,11 +301,15 @@ void run_pid() {
     nav_msg.thruster = 0;
     nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
 
+    int servo1_angle =
+        compute_heading(imu_pub.returnYaw(), pid_request_msg->yaw);
+
     // TODO: use this code to write to the servos and thruster
-    my_servo1.write(90);
+    my_servo1.write(servo1_angle);
     my_servo2.write(90);
     my_servo3.write(90);
-    int thrusterValue = map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
+    int thrusterValue =
+        map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
     thruster.writeMicroseconds(thrusterValue);
   } else {
 
@@ -289,7 +325,7 @@ void run_pid() {
 }
 
 void loop() {
-  imu_pub.imu_update();
+  // imu_pub.imu_update();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
@@ -311,8 +347,9 @@ void loop() {
                                         ? AGENT_CONNECTED
                                         : AGENT_DISCONNECTED;);
     if (state == AGENT_CONNECTED) {
+      imu_pub.imu_update();
       run_pid();
-      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
     }
     break;
 
