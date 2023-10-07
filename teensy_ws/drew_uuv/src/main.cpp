@@ -348,8 +348,8 @@ void loop() {
                                         ? AGENT_CONNECTED
                                         : AGENT_DISCONNECTED;);
     if (state == AGENT_CONNECTED) {
-  run_pid();
-      // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+      run_pid();
+      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
     }
     break;
 
