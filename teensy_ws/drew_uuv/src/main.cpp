@@ -241,12 +241,12 @@ void destroy_entities() {
 
 void setup() {
 
-  // Serial.begin(BAUD_RATE);
-  // set_microros_serial_transports(Serial);
+  Serial.begin(BAUD_RATE);
+  set_microros_serial_transports(Serial);
   imu_pub.imu_setup();
-  // pin_setup();
+  pin_setup();
 
-  // state = WAITING_AGENT;
+  state = WAITING_AGENT;
 }
 
 int compute_heading(float heading_curr,
@@ -328,37 +328,37 @@ void run_pid() {
 void loop() {
   imu_pub.imu_update();
 
-  // // state machine to manage connecting and disconnecting the micro-ROS agent
-  // switch (state) {
-  // case WAITING_AGENT:
-  //   EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-  //                                       ? AGENT_AVAILABLE
-  //                                       : WAITING_AGENT;);
-  //   break;
+  // state machine to manage connecting and disconnecting the micro-ROS agent
+  switch (state) {
+  case WAITING_AGENT:
+    EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
+                                        ? AGENT_AVAILABLE
+                                        : WAITING_AGENT;);
+    break;
 
-  // case AGENT_AVAILABLE:
-  //   state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
-  //   if (state == WAITING_AGENT) {
-  //     destroy_entities();
-  //   };
-  //   break;
+  case AGENT_AVAILABLE:
+    state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
+    if (state == WAITING_AGENT) {
+      destroy_entities();
+    };
+    break;
 
-  // case AGENT_CONNECTED:
-  //   EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-  //                                       ? AGENT_CONNECTED
-  //                                       : AGENT_DISCONNECTED;);
-  //   if (state == AGENT_CONNECTED) {
-      run_pid();
-  //     // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
-  //   }
-  //   break;
+  case AGENT_CONNECTED:
+    EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
+                                        ? AGENT_CONNECTED
+                                        : AGENT_DISCONNECTED;);
+    if (state == AGENT_CONNECTED) {
+  run_pid();
+      // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+    }
+    break;
 
-  // case AGENT_DISCONNECTED:
-  //   destroy_entities();
-  //   state = WAITING_AGENT;
-  //   break;
+  case AGENT_DISCONNECTED:
+    destroy_entities();
+    state = WAITING_AGENT;
+    break;
 
-  // default:
-  //   break;
-  // }
+  default:
+    break;
+  }
 }
