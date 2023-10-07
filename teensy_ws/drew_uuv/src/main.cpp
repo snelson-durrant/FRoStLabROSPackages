@@ -62,8 +62,8 @@ PressurePub pressure_pub;
 IMUPub imu_pub;
 
 // service objects
-GPSSrv gps_srv;
-EchoSrv echo_srv;
+// GPSSrv gps_srv;
+// EchoSrv echo_srv;
 
 // servo, thruster variables
 Servo my_servo1;
@@ -118,14 +118,14 @@ void pin_setup() {
 }
 
 // "fake function" to allow the service object function to be called
-void gps_service_callback(const void *request_msg, void *response_msg) {
-  gps_srv.respond(request_msg, response_msg);
-}
+// void gps_service_callback(const void *request_msg, void *response_msg) {
+//   gps_srv.respond(request_msg, response_msg);
+// }
 
 // "fake function" to allow the service object function to be called
-void echo_service_callback(const void *request_msg, void *response_msg) {
-  echo_srv.respond(request_msg, response_msg);
-}
+// void echo_service_callback(const void *request_msg, void *response_msg) {
+//   echo_srv.respond(request_msg, response_msg);
+// }
 
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
@@ -197,12 +197,12 @@ bool create_entities() {
 
   // add callbacks to executor
   RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
-  RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
-                                        &gps_srv.msgReq, &gps_srv.msgRes,
-                                        gps_service_callback));
-  RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
-                                        &echo_srv.msgReq, &echo_srv.msgRes,
-                                        echo_service_callback));
+  // RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
+  //                                       &gps_srv.msgReq, &gps_srv.msgRes,
+  //                                       gps_service_callback));
+  // RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
+  //                                       &echo_srv.msgReq, &echo_srv.msgRes,
+  //                                       echo_service_callback));
   RCSOFTCHECK(rclc_executor_add_subscription(
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
@@ -226,8 +226,8 @@ void destroy_entities() {
   imu_pub.destroy(node);
 
   // destroy services
-  gps_srv.destroy(node);
-  echo_srv.destroy(node);
+  // gps_srv.destroy(node);
+  // echo_srv.destroy(node);
 
   // destroy everything else
   rcl_subscription_fini(&subscriber, &node);
@@ -241,12 +241,12 @@ void destroy_entities() {
 
 void setup() {
 
-  Serial.begin(BAUD_RATE);
-  set_microros_serial_transports(Serial);
+  // Serial.begin(BAUD_RATE);
+  // set_microros_serial_transports(Serial);
   imu_pub.imu_setup();
-  pin_setup();
+  // pin_setup();
 
-  state = WAITING_AGENT;
+  // state = WAITING_AGENT;
 }
 
 int compute_heading(float heading_curr,
@@ -326,40 +326,39 @@ void run_pid() {
 }
 
 void loop() {
-  // imu_pub.imu_update();
+  imu_pub.imu_update();
 
-  // state machine to manage connecting and disconnecting the micro-ROS agent
-  switch (state) {
-  case WAITING_AGENT:
-    EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-                                        ? AGENT_AVAILABLE
-                                        : WAITING_AGENT;);
-    break;
+  // // state machine to manage connecting and disconnecting the micro-ROS agent
+  // switch (state) {
+  // case WAITING_AGENT:
+  //   EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
+  //                                       ? AGENT_AVAILABLE
+  //                                       : WAITING_AGENT;);
+  //   break;
 
-  case AGENT_AVAILABLE:
-    state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
-    if (state == WAITING_AGENT) {
-      destroy_entities();
-    };
-    break;
+  // case AGENT_AVAILABLE:
+  //   state = (true == create_entities()) ? AGENT_CONNECTED : WAITING_AGENT;
+  //   if (state == WAITING_AGENT) {
+  //     destroy_entities();
+  //   };
+  //   break;
 
-  case AGENT_CONNECTED:
-    EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
-                                        ? AGENT_CONNECTED
-                                        : AGENT_DISCONNECTED;);
-    if (state == AGENT_CONNECTED) {
-      imu_pub.imu_update();
+  // case AGENT_CONNECTED:
+  //   EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
+  //                                       ? AGENT_CONNECTED
+  //                                       : AGENT_DISCONNECTED;);
+  //   if (state == AGENT_CONNECTED) {
       run_pid();
-      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-    }
-    break;
+  //     // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+  //   }
+  //   break;
 
-  case AGENT_DISCONNECTED:
-    destroy_entities();
-    state = WAITING_AGENT;
-    break;
+  // case AGENT_DISCONNECTED:
+  //   destroy_entities();
+  //   state = WAITING_AGENT;
+  //   break;
 
-  default:
-    break;
-  }
+  // default:
+  //   break;
+  // }
 }

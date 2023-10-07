@@ -16,6 +16,8 @@ public:
     Serial5.println("Setting desired reports");
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial5.println("Could not enable linear acceleration");
+    } else {
+      Serial5.println("Enabled");
     }
     if (!bno08x.enableReport(SH2_ARVR_STABILIZED_RV, 5000)) {
       Serial5.println("Could not enable stabilized remote vector");
@@ -59,8 +61,9 @@ public:
     Serial5.begin(9600);
     bno08x = Adafruit_BNO08x(-1);
 
-    // THIS NEEDS TO BE DECLARED HERE BECAUSE IT RUNS FIRST
+    // THIS NEEDS TO BE DECLARED HERE BECAUSE IT RUNS FIRST?
     Wire2.begin();
+
     while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial5.println("Failed to find BNO08x chip");
         Serial5.println(millis());
@@ -101,20 +104,20 @@ public:
   void imu_update() {
     if (bno08x.wasReset()) {
       Serial5.println("was reset");
-      // setReports();
+      setReports();
     }
     // Serial5.println("here");
 
     if (!bno08x.getSensorEvent(&sensorValue)) {
       switch (sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
-        //Serial5.println("Got 1");
+        Serial5.println("Got 1");
         msg.lin_accel_x = sensorValue.un.linearAcceleration.x;
-        linear_accel_x = sensorValue.un.linearAcceleration.x;
+        // linear_accel_x = sensorValue.un.linearAcceleration.x;
         msg.lin_accel_y = sensorValue.un.linearAcceleration.y;
         msg.lin_accel_z = sensorValue.un.linearAcceleration.z;
-        calculate_velocity();
-        msg.mag_x = velocity;
+        // calculate_velocity();
+        // msg.mag_x = velocity;
         break;
       case SH2_ARVR_STABILIZED_RV:
         Serial5.println("Got 2");
@@ -122,10 +125,9 @@ public:
         msg.gyro_x = ypr.yaw;
         msg.gyro_y = ypr.pitch;
         msg.gyro_z = ypr.roll;
-        msg.accel_x += 0.01;
         break;
       default:
-        msg.accel_y += 0.01;
+        // Serial5.println("Default");
         break;
       }
     }
