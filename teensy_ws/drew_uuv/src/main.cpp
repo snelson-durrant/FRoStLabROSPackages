@@ -130,16 +130,19 @@ void pin_setup() {
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
+  Serial5.println("callback");
+
+  // THE ERROR IS MOST LIKELY HERE
   (void)last_call_time;
   if (timer != NULL) {
 
-    voltage_pub.publish();
-    humidity_pub.publish();
-    leak_pub.publish();
-    pressure_pub.publish();
-    imu_pub.publish();
-    RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-    RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+  //   voltage_pub.publish();
+  //   humidity_pub.publish();
+  //   leak_pub.publish();
+  //   pressure_pub.publish();
+  //   imu_pub.publish();
+  //   RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+  //   RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
   }
 }
 
@@ -326,6 +329,7 @@ void run_pid() {
 }
 
 void loop() {
+  // Serial5.println("loop enter");
   imu_pub.imu_update();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
