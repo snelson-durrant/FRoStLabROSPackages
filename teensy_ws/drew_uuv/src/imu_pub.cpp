@@ -58,6 +58,9 @@ public:
     
     Serial5.begin(9600);
     bno08x = Adafruit_BNO08x(-1);
+
+    // THIS NEEDS TO BE DECLARED HERE BECAUSE IT RUNS FIRST
+    Wire2.begin();
     while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial5.println("Failed to find BNO08x chip");
         Serial5.println(millis());
@@ -98,12 +101,11 @@ public:
   void imu_update() {
     if (bno08x.wasReset()) {
       Serial5.println("was reset");
-      setReports();
+      // setReports();
     }
     // Serial5.println("here");
 
     if (!bno08x.getSensorEvent(&sensorValue)) {
-      Serial5.println("Got sensor event");
       switch (sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
         //Serial5.println("Got 1");
@@ -123,7 +125,6 @@ public:
         msg.accel_x += 0.01;
         break;
       default:
-        Serial5.println("default");
         msg.accel_y += 0.01;
         break;
       }
@@ -134,7 +135,7 @@ public:
 
     msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-    Serial5.print("publish");
+    Serial5.println("publish");
   }
 
   using Publisher::destroy;

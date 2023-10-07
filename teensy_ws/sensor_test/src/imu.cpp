@@ -194,6 +194,7 @@ void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr
 
 void setup_imu() {
     // Wire2.begin(BNO08x_I2CADDR_DEFAULT);
+    Wire2.begin();
     while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
         Serial.println(millis());
