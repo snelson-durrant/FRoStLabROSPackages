@@ -25,8 +25,8 @@
 
 #define BAUD_RATE 6000000
 #define CALLBACK_TOTAL 6
-#define TIMER_PERIOD 5000
-#define TIMER_PID_PERIOD 10
+#define TIMER_PERIOD 3000
+#define TIMER_PID_PERIOD 5
 #define SYNC_TIMEOUT 1000
 
 #define LOW_FINAL 0
@@ -64,8 +64,8 @@ PressurePub pressure_pub;
 IMUPub imu_pub;
 
 // service objects
-// GPSSrv gps_srv;
-// EchoSrv echo_srv;
+GPSSrv gps_srv;
+EchoSrv echo_srv;
 
 // servo, thruster variables
 Servo my_servo1;
@@ -139,7 +139,7 @@ void run_pid() {
     // use custom functions from imu_pub and depth_pub to get values
 
     // TODO: update these variables as we calculate them
-    pid_actual_msg.velocity += 1;
+    pid_actual_msg.velocity = 0.0;
     pid_actual_msg.yaw = 0.0;
     pid_actual_msg.pitch = 0.0;
     pid_actual_msg.roll = 0.0;
@@ -196,48 +196,65 @@ void pin_setup() {
 }
 
 // "fake function" to allow the service object function to be called
-// void gps_service_callback(const void *request_msg, void *response_msg) {
-//   gps_srv.respond(request_msg, response_msg);
-// }
+void gps_service_callback(const void *request_msg, void *response_msg) {
+  gps_srv.respond(request_msg, response_msg);
+}
 
 // "fake function" to allow the service object function to be called
-// void echo_service_callback(const void *request_msg, void *response_msg) {
-//   echo_srv.respond(request_msg, response_msg);
-// }
+void echo_service_callback(const void *request_msg, void *response_msg) {
+  echo_srv.respond(request_msg, response_msg);
+}
 
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
-  //Serial5.println("callback");
-
-  // THE ERROR IS MOST LIKELY HERE
   (void)last_call_time;
   if (timer != NULL) {
 
-  //   voltage_pub.publish();
-  //   humidity_pub.publish();
-  //   leak_pub.publish();
-  //   pressure_pub.publish();
+    voltage_pub.publish();
+
+    imu_pub.imu_update();
+    run_pid();
+
+    humidity_pub.publish();
+
+    imu_pub.imu_update();
+    run_pid();
+
+    leak_pub.publish();
+
+    imu_pub.imu_update();
+    run_pid();
+
+    pressure_pub.publish();
+
+    imu_pub.imu_update();
+    run_pid();
+
     imu_pub.publish();
-  //   RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-  //   RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+
+    imu_pub.imu_update();
+    run_pid();
+
+    RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+
+    imu_pub.imu_update();
+    run_pid();
+
+    RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
   }
 
 }
 
-// micro-ROS function that publishes all the data to their topics
+// TODO: ADD HERE
 void timer_pid_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
-  //Serial5.println("callback");
-
-  // THE ERROR IS MOST LIKELY HERE
   (void)last_call_time;
   if (timer != NULL) {
 
     imu_pub.imu_update();
     run_pid();
   }
-
 }
 
 // micro-Ros function that subscribes to requested PID values
@@ -268,8 +285,8 @@ bool create_entities() {
   imu_pub.setup(node);
 
   // create services
-  // gps_srv.setup(node);
-  // echo_srv.setup(node);
+  gps_srv.setup(node);
+  echo_srv.setup(node);
 
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
@@ -297,12 +314,12 @@ bool create_entities() {
   // add callbacks to executor
   RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
   RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer1));
-  // RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
-  //                                       &gps_srv.msgReq, &gps_srv.msgRes,
-  //                                       gps_service_callback));
-  // RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
-  //                                       &echo_srv.msgReq, &echo_srv.msgRes,
-  //                                       echo_service_callback));
+  RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
+                                        &gps_srv.msgReq, &gps_srv.msgRes,
+                                        gps_service_callback));
+  RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
+                                        &echo_srv.msgReq, &echo_srv.msgRes,
+                                        echo_service_callback));
   RCSOFTCHECK(rclc_executor_add_subscription(
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
@@ -326,8 +343,8 @@ void destroy_entities() {
   imu_pub.destroy(node);
 
   // destroy services
-  // gps_srv.destroy(node);
-  // echo_srv.destroy(node);
+  gps_srv.destroy(node);
+  echo_srv.destroy(node);
 
   // destroy everything else
   rcl_subscription_fini(&subscriber, &node);
@@ -351,8 +368,6 @@ void setup() {
 }
 
 void loop() {
-  // Serial5.println("loop enter");
-  // imu_pub.imu_update();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
