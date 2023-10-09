@@ -25,7 +25,7 @@
 
 #define BAUD_RATE 6000000
 #define CALLBACK_TOTAL 6
-#define TIMER_PERIOD 3000
+#define TIMER_PERIOD 30000
 #define TIMER_PID_PERIOD 5
 #define SYNC_TIMEOUT 1000
 
@@ -127,8 +127,6 @@ void run_pid() {
   // LOW-LEVEL CONTROLLER CODE STARTS HERE
   //////////////////////////////////////////////////////////
 
-  pid_request_msg->stop = false;
-  pid_request_msg->yaw = 90.0;
   if (pid_request_msg->stop == false) {
 
     // TODO: add PID stuff here
@@ -212,35 +210,11 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   if (timer != NULL) {
 
     voltage_pub.publish();
-
-    imu_pub.imu_update();
-    run_pid();
-
     humidity_pub.publish();
-
-    imu_pub.imu_update();
-    run_pid();
-
     leak_pub.publish();
-
-    imu_pub.imu_update();
-    run_pid();
-
     pressure_pub.publish();
-
-    imu_pub.imu_update();
-    run_pid();
-
     imu_pub.publish();
-
-    imu_pub.imu_update();
-    run_pid();
-
     RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-
-    imu_pub.imu_update();
-    run_pid();
-
     RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
   }
 
@@ -324,7 +298,7 @@ bool create_entities() {
       &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
 
   // wait for first new data to arrive from pid_request topic
-  // pid_request_msg->stop = true;
+  pid_request_msg->stop = true;
 
   Serial5.print("end setup\n");
 

@@ -45,24 +45,6 @@ class Controller(Node):
             callback_group=self.main_callback_group,
         )
 
-        # Create the subscriptions
-        # self.imu_subscription = self.create_subscription(
-        #     IMU,
-        #     "imu_data",
-        #     self.imu_listener_callback,
-        #     QOS_PROFILE,
-        #     callback_group=self.main_callback_group,
-        # )
-        # self.imu_subscription  # prevent unused variable warning
-        # self.depth_subscription = self.create_subscription(
-        #     Depth,
-        #     "depth_data",
-        #     self.depth_listener_callback,
-        #     QOS_PROFILE,
-        #     callback_group=self.main_callback_group,
-        # )
-        # self.depth_subscription  # prevent unused variable warning
-
         # Create the services
         self.srv = self.create_service(
             EmergencyStop,
@@ -92,45 +74,6 @@ class Controller(Node):
         self.prev_depth = 0.0
         self.stop = False
         self.counter = 0
-
-    # Updates the recieved IMU data
-    # def imu_listener_callback(self, msg):
-    #     self.imu_accel_x = msg.accel_x
-    #     self.imu_accel_y = msg.accel_y
-    #     self.imu_accel_z = msg.accel_z
-    #     self.imu_gyro_x = msg.gyro_x
-    #     self.imu_gyro_y = msg.gyro_y
-    #     self.imu_gyro_z = msg.gyro_z
-    #     self.imu_mag_x = msg.mag_x
-    #     self.imu_mag_y = msg.mag_y
-    #     self.imu_mag_z = msg.mag_z
-    #     self.imu_lin_accel_x = msg.lin_accel_x
-    #     self.imu_lin_accel_y = msg.lin_accel_y
-    #     self.imu_lin_accel_z = msg.lin_accel_z
-    #     self.imu_grav_x = msg.grav_x
-    #     self.imu_grav_y = msg.grav_y
-    #     self.imu_grav_z = msg.grav_z
-    #     self.imu_rot_vec_i = msg.rot_vec_i
-    #     self.imu_rot_vec_j = msg.rot_vec_j
-    #     self.imu_rot_vec_k = msg.rot_vec_k
-    #     self.imu_geomag_rot_vec_i = msg.geomag_rot_vec_i
-    #     self.imu_geomag_rot_vec_j = msg.geomag_rot_vec_j
-    #     self.imu_geomag_rot_vec_k = msg.geomag_rot_vec_k
-    #     self.imu_raw_accel_x = msg.raw_accel_x
-    #     self.imu_raw_accel_y = msg.raw_accel_y
-    #     self.imu_raw_accel_z = msg.raw_accel_z
-    #     self.imu_raw_gyro_x = msg.raw_gyro_x
-    #     self.imu_raw_gyro_y = msg.raw_gyro_y
-    #     self.imu_raw_gyro_z = msg.raw_gyro_z
-    #     self.imu_raw_mag_x = msg.raw_mag_x
-    #     self.imu_raw_mag_y = msg.raw_mag_y
-    #     self.imu_raw_mag_z = msg.raw_mag_z
-
-    # Updates the recieved pressure sensor data
-    # def depth_listener_callback(self, msg):
-    #     self.depth_pressure = msg.pressure
-    #     self.depth_depth = msg.depth
-    #     self.depth_temperature = msg.temperature
 
     # Sets the state machine to STOP when EmergencyStop is requested
     def emergency_stop_callback(self, request, response):
@@ -189,7 +132,7 @@ class Controller(Node):
 
             # TODO: Adjust this simple state machine
             # For a faster update time, adjust PID_PUB_TIMER_PERIOD
-            if self.counter < 20:
+            if self.counter < 30:
                 pid_msg.velocity = 0.0
                 pid_msg.yaw = 90.0
                 pid_msg.pitch = 0.0

@@ -2,16 +2,16 @@ import rclpy
 from rclpy.node import Node
 from frost_interfaces.srv import EmergencyStop
 from frost_interfaces.msg import Humid
+from rclpy.qos import qos_profile_sensor_data
 
 SERVICE_TIMEOUT = 1  # seconds
-QOS_PROFILE = 10
 
 
 class HumiditySubscriber(Node):
     def __init__(self):
         super().__init__("humidity_subscriber")
         self.subscription = self.create_subscription(
-            Humid, "humidity", self.listener_callback, QOS_PROFILE
+            Humid, "humidity", self.listener_callback, qos_profile_sensor_data
         )
         self.subscription  # prevent unused variable warning
         self.cli = self.create_client(EmergencyStop, "emergency_stop")
