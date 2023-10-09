@@ -71,6 +71,7 @@ public:
         // bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
     }
     setReports();
+    bno08x.getSensorEvent(&fillerValue);
     Serial5.println("end setup");
   }
 
@@ -96,8 +97,8 @@ public:
       prev_time_1 = current_time;
       prev_accel_2 = prev_accel_1;
       prev_accel_1 = linear_accel_x;
-      Serial.print("Velocity: ");
-      Serial.println(velocity);
+      Serial5.println("Velocity: ");
+      Serial5.println(velocity);
     }
   }
 
@@ -106,12 +107,13 @@ public:
       Serial5.println("was reset");
       setReports();
     }
-    // Serial5.println("here");
+    // Serial5.println("at update");
 
-    if (!bno08x.getSensorEvent(&sensorValue)) {
+    sensorValue = bno08x.getHackSensorEvent();
+    if (sensorValue.timestamp != 0) {
       switch (sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
-        Serial5.println("Got 1");
+        Serial5.println("Got 1 UPDATE");
         msg.lin_accel_x = sensorValue.un.linearAcceleration.x;
         // linear_accel_x = sensorValue.un.linearAcceleration.x;
         msg.lin_accel_y = sensorValue.un.linearAcceleration.y;
@@ -120,17 +122,20 @@ public:
         // msg.mag_x = velocity;
         break;
       case SH2_ARVR_STABILIZED_RV:
-        Serial5.println("Got 2");
+        Serial5.println("Got 2 UPDATE");
         quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
         msg.gyro_x = ypr.yaw;
         msg.gyro_y = ypr.pitch;
         msg.gyro_z = ypr.roll;
         break;
       default:
-        // Serial5.println("Default");
+        Serial5.println("Default");
         break;
+      
       }
     }
+    
+
   }
 
   void publish() {
@@ -145,6 +150,7 @@ public:
 private:
   Adafruit_BNO08x bno08x;
   sh2_SensorValue_t sensorValue;
+  sh2_SensorValue_t fillerValue;
 
   sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
   long report_interval = 10000;

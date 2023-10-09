@@ -25,7 +25,7 @@
 
 #define BAUD_RATE 6000000
 #define CALLBACK_TOTAL 5
-#define TIMER_PERIOD 2000
+#define TIMER_PERIOD 1
 #define SYNC_TIMEOUT 1000
 
 #define LOW_FINAL 0
@@ -130,7 +130,7 @@ void pin_setup() {
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
-  Serial5.println("callback");
+  //Serial5.println("callback");
 
   // THE ERROR IS MOST LIKELY HERE
   (void)last_call_time;
@@ -140,10 +140,12 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   //   humidity_pub.publish();
   //   leak_pub.publish();
   //   pressure_pub.publish();
-  //   imu_pub.publish();
+    imu_pub.publish();
   //   RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
   //   RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+    imu_pub.imu_update();
   }
+
 }
 
 // micro-Ros function that subscribes to requested PID values
@@ -212,7 +214,7 @@ bool create_entities() {
   // wait for first new data to arrive from pid_request topic
   // pid_request_msg->stop = true;
 
-  Serial.print("end setup\n");
+  Serial5.print("end setup\n");
 
   return true;
 }
@@ -330,7 +332,7 @@ void run_pid() {
 
 void loop() {
   // Serial5.println("loop enter");
-  imu_pub.imu_update();
+  // imu_pub.imu_update();
 
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
@@ -352,8 +354,9 @@ void loop() {
                                         ? AGENT_CONNECTED
                                         : AGENT_DISCONNECTED;);
     if (state == AGENT_CONNECTED) {
-      run_pid();
-      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+      // run_pid();
+      //delay(1);
+      rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
     break;
 
