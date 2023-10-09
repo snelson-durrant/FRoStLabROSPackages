@@ -7,8 +7,18 @@
 #define THRUSTER_PIN 10
 Servo my_servo;
 Servo my_thruster; 
-PID_Control Heading;
-PID_Control Velocity; 
+// PID Objects
+#define HEADING_P 0.6
+#define HEADING_I 0.05
+PID_Control Heading(HEADING_P, HEADING_I, 40, 140, 90);
+#define VELOCITY_P 0.6
+#define VELOCITY_I 0.05
+PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
+#define DEPTH_P 0.2
+#define DEPTH_I 0.05
+PID_Control Depth(DEPTH_P, DEPTH_I, 45, 135, 90);
+float goal_heading = 275;
+float goal_velocity = 3.0;
 
 float input;
 float output;
@@ -33,32 +43,19 @@ unsigned long prev_time_2 = 0;
 float returnYaw(){return ypr.yaw + 180.00;}
 double returnVel(){return velocity;}
 
-float goal_heading = 275;
-// Arbitrary setpoint and gains - adjust these as fit for your project:
-double setpoint = 0;
-double p = 0.2;   //Tune the PID!
-double i = 0.05;
-double d = 0.5;
 
-float goal_velocity = 3.0;
-// Arbitrary setpoint and gains - adjust these as fit for your project:
-double setpoint_velocity = 0;
-double pv = 0.4;   //Tune the PID!
-double iv = 0.2;
-double dv = 0.5;
+
 
 void setup_PID(){
   my_servo.attach(SERVO_PIN1);
   my_servo.write(90);
-  Heading.begin(p,i,45, 135, 90);
   my_thruster.attach(THRUSTER_PIN);
   my_thruster.write(90);
-  Velocity.begin(pv, iv, 0, 100);
 }
 
 int compute_heading(float heading_curr){          //TODO: Make the parameter a pointer directly to the heading 
-    Serial.print("Heading: ");
-    Serial.println(heading_curr);
+    // Serial.print("Heading: ");
+    // Serial.println(heading_curr);
     if(goal_heading > heading_curr){
         if((360 - goal_heading + heading_curr) < (goal_heading - heading_curr)){
             input = -1 * (360 - goal_heading + heading_curr);
@@ -75,19 +72,25 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
           input = goal_heading - heading_curr;
       }
     }
-    Serial.print("Input: ");
-    Serial.println(input);
+    // Serial.print("Input: ");
+    // Serial.println(input);
     output = Heading.compute(goal_heading, heading_curr);    
-    Serial.print("output");
-    Serial.println(output);
+    // Serial.print("output");
+    // Serial.println(output);
     return int(output);
   }
 
 void PID_loop(){
   int servo1_angle = compute_heading(returnYaw());      //TODO: make this with pointers
-  Serial.print("Servo Angle: ");
-  Serial.println(servo1_angle);
+  // Serial.print("Servo Angle: ");
+  //Serial.println(servo1_angle);
   my_servo.write(servo1_angle);
+
+  int thruster_speed = Velocity.compute(goal_velocity, returnVel());    
+  int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
+  my_thruster.write(servo2_angle);
+  // Serial.print("Thruster Angle: ");
+  // Serial.println(servo2_angle);
   //int thruster = compute_velocity(returnVel());
 }
 
@@ -104,28 +107,37 @@ void PID_loop(){
 
 
 
-void calculate_velocity(){     //Could make function with pointers so it can calculate all velocities
-  if(n_time < 2){
+void calculate_velocity() { // Could make function with pointers so it can
+                            // calculate all velocities
+  if (n_time < 2) {
     prev_time_2 = prev_time_1;
     prev_time_1 = micros();
     prev_accel_2 = prev_accel_1;
     prev_accel_1 = linear_accel_x;
     n_time++;
-  }
-  else{
+  } else {
     unsigned long current_time = micros();
-    float delta_time = (current_time - prev_time_2) *1e-6;
-    velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) * delta_time / 6.0;
-    // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;  //trapezoidal
-    // prev_time = micros();
-    // prev_accel = linear_accel_x;
+    float delta_time = (current_time - prev_time_2) * 1e-6;
+    velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) *
+                delta_time / 6.0;
+    // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;
+    // //trapezoidal prev_time = micros(); prev_accel = linear_accel_x;
     prev_time_2 = prev_time_1;
     prev_time_1 = current_time;
     prev_accel_2 = prev_accel_1;
     prev_accel_1 = linear_accel_x;
-    Serial.print("Velocity: ");
-    Serial.println(velocity);
+    Serial.println("Velocity: ");
+    Serial.print(velocity*1000);
+    Serial.print("\t");
+    Serial.print(linear_accel_x*1000);
+    Serial.print("\t");
+    Serial.println(delta_time*1000);
   }
+}
+
+float filter_accelerometer(float accelx, float rawaccel){
+  
+  return 
 }
         
 void setReports(void) {
@@ -221,55 +233,29 @@ void loop_imu() {
 
   if (bno08x.getSensorEvent(&sensorValue)) {
     // in this demo only one report type will be received depending on FAST_MODE define (above)
-    Serial.println("Here");
+    //Serial.println("Here");
     switch (sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
-        Serial.print("Linear Acceration - x: ");
-        Serial.print(sensorValue.un.linearAcceleration.x);
-        Serial.print(" y: ");
-        Serial.print(sensorValue.un.linearAcceleration.y);
-        Serial.print(" z: ");
-        Serial.println(sensorValue.un.linearAcceleration.z);
+        // Serial.print("Linear Acceration - x: ");
+        // Serial.print(sensorValue.un.linearAcceleration.x);
+        linear_accel_x = sensorValue.un.linearAcceleration.x;
+        linear_accel_x = filter
+        // Serial.print(" y: ");
+        // Serial.print(sensorValue.un.linearAcceleration.y);
+        // Serial.print(" z: ");
+        // Serial.println(sensorValue.un.linearAcceleration.z);
         calculate_velocity();
         
         break;
       case SH2_ARVR_STABILIZED_RV:
         quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
-        now = micros();
-        Serial.print(now - last);             Serial.print("\t");
-        last = now;
-        Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
-        Serial.print(ypr.yaw);                Serial.print("\t");
-        Serial.print(ypr.pitch);              Serial.print("\t");
-        Serial.println(ypr.roll);
-        break;
-      case SH2_GYRO_INTEGRATED_RV:
-        // faster (more noise?)
-        quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &ypr, true);
-        break;
-      case SH2_ACCELEROMETER:
-        Serial.print("Accelerometer - x: ");
-        Serial.print(sensorValue.un.accelerometer.x);
-        Serial.print(" y: ");
-        Serial.print(sensorValue.un.accelerometer.y);
-        Serial.print(" z: ");
-        Serial.println(sensorValue.un.accelerometer.z);
-        break;
-      case SH2_GYROSCOPE_CALIBRATED:
-        Serial.print("Gyro - x: ");
-        Serial.print(sensorValue.un.gyroscope.x);
-        Serial.print(" y: ");
-        Serial.print(sensorValue.un.gyroscope.y);
-        Serial.print(" z: ");
-        Serial.println(sensorValue.un.gyroscope.z);
-        break;
-      case SH2_MAGNETIC_FIELD_CALIBRATED:
-        Serial.print("Magnetic Field - x: ");
-        Serial.print(sensorValue.un.magneticField.x);
-        Serial.print(" y: ");
-        Serial.print(sensorValue.un.magneticField.y);
-        Serial.print(" z: ");
-        Serial.println(sensorValue.un.magneticField.z);
+        // now = micros();
+        // Serial.print(now - last);             Serial.print("\t");
+        // last = now;
+        // Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
+        // Serial.print(ypr.yaw);                Serial.print("\t");
+        // Serial.print(ypr.pitch);              Serial.print("\t");
+        // Serial.println(ypr.roll);
         break;
       
     }

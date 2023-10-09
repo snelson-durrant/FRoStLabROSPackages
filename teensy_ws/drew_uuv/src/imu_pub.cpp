@@ -105,11 +105,11 @@ public:
       switch (sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
         msg.lin_accel_x = sensorValue.un.linearAcceleration.x;
-        // linear_accel_x = sensorValue.un.linearAcceleration.x;
+        linear_accel_x = sensorValue.un.linearAcceleration.x;
         msg.lin_accel_y = sensorValue.un.linearAcceleration.y;
         msg.lin_accel_z = sensorValue.un.linearAcceleration.z;
-        // calculate_velocity();
-        // msg.mag_x = velocity;
+        calculate_velocity();
+        msg.mag_x = velocity;
         break;
       case SH2_ARVR_STABILIZED_RV:
         quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);

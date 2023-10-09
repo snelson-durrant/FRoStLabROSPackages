@@ -74,10 +74,10 @@ Servo my_servo3;
 Servo thruster;
 
 // PID Objects
-#define HEADING_P 0.2
+#define HEADING_P 0.6
 #define HEADING_I 0.05
-PID_Control Heading(HEADING_P, HEADING_I, 45, 135, 90);
-#define VELOCITY_P 0.2
+PID_Control Heading(HEADING_P, HEADING_I, 40, 140, 90);
+#define VELOCITY_P 0.6
 #define VELOCITY_I 0.05
 PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
 #define DEPTH_P 0.2
@@ -99,8 +99,7 @@ void error_loop() {
   }
 }
 
-int compute_heading(float heading_curr,
-                    float goal_heading) { // TODO: Make the parameter a pointer
+int compute_heading(float goal_heading, float heading_curr) { // TODO: Make the parameter a pointer
                                           // directly to the heading
   static float input = 0;
   static float output = 0;
@@ -151,11 +150,15 @@ void run_pid() {
     nav_msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
 
     int servo1_angle =
-        compute_heading(imu_pub.returnYaw(), pid_request_msg->yaw);
+        compute_heading(pid_request_msg->yaw,imu_pub.returnYaw());
 
+    int thruster_speed = Velocity.compute(pid_request_msg->velocity, imu_pub.returnVel());    
+    int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
     // TODO: use this code to write to the servos and thruster
     my_servo1.write(servo1_angle);
-    my_servo2.write(90);
+    my_servo2.write(servo2_angle);
+    Serial5.print("Thruster Value: ");
+    Serial5.print(map(thruster_speed, 0, 100, 1500, 2000))
     my_servo3.write(90);
     int thrusterValue =
         map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
@@ -203,12 +206,18 @@ void echo_service_callback(const void *request_msg, void *response_msg) {
   echo_srv.respond(request_msg, response_msg);
 }
 
+
 // micro-ROS function that publishes all the data to their topics
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
   (void)last_call_time;
+  static unsigned long last_timer = 0;
+  static unsigned long current = 0;
   if (timer != NULL) {
-
+    Serial5.print("Timer: ");
+    current = millis();
+    Serial5.println(current - last_timer);
+    last_timer = current;
     voltage_pub.publish();
     humidity_pub.publish();
     leak_pub.publish();
@@ -222,10 +231,13 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
 // TODO: ADD HERE
 void timer_pid_callback(rcl_timer_t *timer, int64_t last_call_time) {
-
+  static unsigned long last_timer = 0;
+  static unsigned long current = 0;
   (void)last_call_time;
   if (timer != NULL) {
-
+    Serial5.print("Timer: ");
+    current = millis();
+    Serial5.println(current - last_timer);
     imu_pub.imu_update();
     run_pid();
   }

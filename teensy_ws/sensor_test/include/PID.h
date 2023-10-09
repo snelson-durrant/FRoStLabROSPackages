@@ -1,5 +1,5 @@
-#ifndef PID
-#define PID
+#ifndef PID_Header
+#define PID_Header
 
 #include <Arduino.h>
 #define INTEGRAL_CAP 5  //4 times the max output
@@ -19,8 +19,7 @@ private:
     int bias;
 
 public:
-    
-    void begin(float p, float i, int min, int max, int adjust = 0){
+    PID_Control(float p, float i, int min, int max, int adjust = 0){
         kp = p;
         ki = i;
         min_output = min;
@@ -34,8 +33,8 @@ public:
 
     float compute(float goal, float currentVal){
         error = goal - currentVal;
-        Serial.print("Error: ");
-        Serial.println(error);
+        // Serial5.print("Error: ");
+        // Serial5.println(error);
 
         // Update the integral array, replacing the oldest value
         integralArray[integralIndex] = error;
@@ -53,11 +52,11 @@ public:
         if(integral < ((min_output - bias)*INTEGRAL_CAP)){
             integral = (min_output - bias)*INTEGRAL_CAP;           //if the min output was 45 but the bias is 90 then the integral cap would be -45
         }
-        Serial.print("Integral");
-        Serial.println(integral);
+        // Serial5.print("Integral");
+        // Serial5.println(integral);
         float pidVal = error*kp + integral*ki;
-        Serial.print("PID value");
-        Serial.println(pidVal);
+        // Serial5.print("PID value");
+        // Serial5.println(pidVal);
         float output = bias + pidVal;
         
         //Clamp the output to not allow it to exceed the limit
