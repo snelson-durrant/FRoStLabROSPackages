@@ -24,8 +24,9 @@
   } while (0)
 
 #define BAUD_RATE 6000000
-#define CALLBACK_TOTAL 5
-#define TIMER_PERIOD 1
+#define CALLBACK_TOTAL 6
+#define TIMER_PERIOD 5000
+#define TIMER_PID_PERIOD 10
 #define SYNC_TIMEOUT 1000
 
 #define LOW_FINAL 0
@@ -49,6 +50,7 @@ rcl_subscription_t subscriber;
 rcl_publisher_t pid_publisher;
 rcl_publisher_t nav_publisher;
 rcl_timer_t timer;
+rcl_timer_t timer1;
 frost_interfaces__msg__PID msg;
 frost_interfaces__msg__Nav nav_msg;
 frost_interfaces__msg__PID pid_actual_msg;
@@ -95,163 +97,6 @@ void error_loop() {
   while (1) {
     delay(100);
   }
-}
-
-// pin setup for servos and thruster
-void pin_setup() {
-
-  pinMode(SERVO_PIN1, OUTPUT);
-  pinMode(SERVO_PIN2, OUTPUT);
-  pinMode(SERVO_PIN3, OUTPUT);
-  pinMode(THRUSTER_PIN, OUTPUT);
-
-  my_servo1.attach(SERVO_PIN1);
-  my_servo2.attach(SERVO_PIN2);
-  my_servo3.attach(SERVO_PIN3);
-  thruster.attach(THRUSTER_PIN);
-
-  my_servo1.write(DEFAULT_SERVO);
-  my_servo2.write(DEFAULT_SERVO);
-  my_servo3.write(DEFAULT_SERVO);
-  thruster.writeMicroseconds(DEFAULT_THRUSTER);
-  delay(7000);
-}
-
-// "fake function" to allow the service object function to be called
-// void gps_service_callback(const void *request_msg, void *response_msg) {
-//   gps_srv.respond(request_msg, response_msg);
-// }
-
-// "fake function" to allow the service object function to be called
-// void echo_service_callback(const void *request_msg, void *response_msg) {
-//   echo_srv.respond(request_msg, response_msg);
-// }
-
-// micro-ROS function that publishes all the data to their topics
-void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
-
-  //Serial5.println("callback");
-
-  // THE ERROR IS MOST LIKELY HERE
-  (void)last_call_time;
-  if (timer != NULL) {
-
-  //   voltage_pub.publish();
-  //   humidity_pub.publish();
-  //   leak_pub.publish();
-  //   pressure_pub.publish();
-    imu_pub.publish();
-  //   RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-  //   RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
-    imu_pub.imu_update();
-  }
-
-}
-
-// micro-Ros function that subscribes to requested PID values
-void subscription_callback(const void *pid_msgin) {
-  pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
-}
-
-bool create_entities() {
-
-  // the allocator object wraps the dynamic memory allocation and deallocation
-  // methods used in micro-ROS
-  allocator = rcl_get_default_allocator();
-  RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-
-  RCCHECK(
-      rclc_node_init_default(&node, "micro_ros_platformio_node", "", &support));
-
-  // synchronize timestamps with the Raspberry Pi
-  // after sync, timing should be able to be accessed with "rmw_uros_epoch"
-  // functions
-  RCCHECK(rmw_uros_sync_session(1000));
-
-  // create publishers
-  voltage_pub.setup(node);
-  humidity_pub.setup(node);
-  leak_pub.setup(node);
-  pressure_pub.setup(node);
-  imu_pub.setup(node);
-
-  // create services
-  // gps_srv.setup(node);
-  // echo_srv.setup(node);
-
-  // create subscriber
-  RCCHECK(rclc_subscription_init_default(
-      &subscriber, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_request"));
-
-  // create publishers
-  RCCHECK(rclc_publisher_init_default(
-      &pid_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_actual"));
-  RCCHECK(rclc_publisher_init_default(
-      &nav_publisher, &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav), "nav_commands"));
-
-  // create timer (handles periodic publications)
-  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(TIMER_PERIOD),
-                                  timer_callback));
-
-  // create executor
-  RCSOFTCHECK(rclc_executor_init(&executor, &support.context, CALLBACK_TOTAL,
-                                 &allocator));
-
-  // add callbacks to executor
-  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
-  // RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
-  //                                       &gps_srv.msgReq, &gps_srv.msgRes,
-  //                                       gps_service_callback));
-  // RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
-  //                                       &echo_srv.msgReq, &echo_srv.msgRes,
-  //                                       echo_service_callback));
-  RCSOFTCHECK(rclc_executor_add_subscription(
-      &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
-
-  // wait for first new data to arrive from pid_request topic
-  // pid_request_msg->stop = true;
-
-  Serial5.print("end setup\n");
-
-  return true;
-}
-
-void destroy_entities() {
-  rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
-  (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
-
-  // destroy publishers
-  voltage_pub.destroy(node);
-  humidity_pub.destroy(node);
-  leak_pub.destroy(node);
-  pressure_pub.destroy(node);
-  imu_pub.destroy(node);
-
-  // destroy services
-  // gps_srv.destroy(node);
-  // echo_srv.destroy(node);
-
-  // destroy everything else
-  rcl_subscription_fini(&subscriber, &node);
-  rcl_publisher_fini(&pid_publisher, &node);
-  rcl_publisher_fini(&nav_publisher, &node);
-  rcl_timer_fini(&timer);
-  rclc_executor_fini(&executor);
-  rcl_node_fini(&node);
-  rclc_support_fini(&support);
-}
-
-void setup() {
-
-  Serial.begin(BAUD_RATE);
-  set_microros_serial_transports(Serial);
-  imu_pub.imu_setup();
-  pin_setup();
-
-  state = WAITING_AGENT;
 }
 
 int compute_heading(float heading_curr,
@@ -330,6 +175,181 @@ void run_pid() {
   //////////////////////////////////////////////////////////
 }
 
+// pin setup for servos and thruster
+void pin_setup() {
+
+  pinMode(SERVO_PIN1, OUTPUT);
+  pinMode(SERVO_PIN2, OUTPUT);
+  pinMode(SERVO_PIN3, OUTPUT);
+  pinMode(THRUSTER_PIN, OUTPUT);
+
+  my_servo1.attach(SERVO_PIN1);
+  my_servo2.attach(SERVO_PIN2);
+  my_servo3.attach(SERVO_PIN3);
+  thruster.attach(THRUSTER_PIN);
+
+  my_servo1.write(DEFAULT_SERVO);
+  my_servo2.write(DEFAULT_SERVO);
+  my_servo3.write(DEFAULT_SERVO);
+  thruster.writeMicroseconds(DEFAULT_THRUSTER);
+  delay(7000);
+}
+
+// "fake function" to allow the service object function to be called
+// void gps_service_callback(const void *request_msg, void *response_msg) {
+//   gps_srv.respond(request_msg, response_msg);
+// }
+
+// "fake function" to allow the service object function to be called
+// void echo_service_callback(const void *request_msg, void *response_msg) {
+//   echo_srv.respond(request_msg, response_msg);
+// }
+
+// micro-ROS function that publishes all the data to their topics
+void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+
+  //Serial5.println("callback");
+
+  // THE ERROR IS MOST LIKELY HERE
+  (void)last_call_time;
+  if (timer != NULL) {
+
+  //   voltage_pub.publish();
+  //   humidity_pub.publish();
+  //   leak_pub.publish();
+  //   pressure_pub.publish();
+    imu_pub.publish();
+  //   RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+  //   RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+  }
+
+}
+
+// micro-ROS function that publishes all the data to their topics
+void timer_pid_callback(rcl_timer_t *timer, int64_t last_call_time) {
+
+  //Serial5.println("callback");
+
+  // THE ERROR IS MOST LIKELY HERE
+  (void)last_call_time;
+  if (timer != NULL) {
+
+    imu_pub.imu_update();
+    run_pid();
+  }
+
+}
+
+// micro-Ros function that subscribes to requested PID values
+void subscription_callback(const void *pid_msgin) {
+  pid_request_msg = (frost_interfaces__msg__PID *)pid_msgin;
+}
+
+bool create_entities() {
+
+  // the allocator object wraps the dynamic memory allocation and deallocation
+  // methods used in micro-ROS
+  allocator = rcl_get_default_allocator();
+  RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+
+  RCCHECK(
+      rclc_node_init_default(&node, "micro_ros_platformio_node", "", &support));
+
+  // synchronize timestamps with the Raspberry Pi
+  // after sync, timing should be able to be accessed with "rmw_uros_epoch"
+  // functions
+  RCCHECK(rmw_uros_sync_session(1000));
+
+  // create publishers
+  voltage_pub.setup(node);
+  humidity_pub.setup(node);
+  leak_pub.setup(node);
+  pressure_pub.setup(node);
+  imu_pub.setup(node);
+
+  // create services
+  // gps_srv.setup(node);
+  // echo_srv.setup(node);
+
+  // create subscriber
+  RCCHECK(rclc_subscription_init_default(
+      &subscriber, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_request"));
+
+  // create publishers
+  RCCHECK(rclc_publisher_init_best_effort(
+      &pid_publisher, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_actual"));
+  RCCHECK(rclc_publisher_init_best_effort(
+      &nav_publisher, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav), "nav_commands"));
+
+  // create timer (handles periodic publications)
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(TIMER_PERIOD),
+                                  timer_callback));
+  RCCHECK(rclc_timer_init_default(&timer1, &support, RCL_MS_TO_NS(TIMER_PID_PERIOD),
+                                  timer_pid_callback));
+
+  // create executor
+  RCSOFTCHECK(rclc_executor_init(&executor, &support.context, CALLBACK_TOTAL,
+                                 &allocator));
+
+  // add callbacks to executor
+  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer));
+  RCSOFTCHECK(rclc_executor_add_timer(&executor, &timer1));
+  // RCSOFTCHECK(rclc_executor_add_service(&executor, &gps_srv.service,
+  //                                       &gps_srv.msgReq, &gps_srv.msgRes,
+  //                                       gps_service_callback));
+  // RCSOFTCHECK(rclc_executor_add_service(&executor, &echo_srv.service,
+  //                                       &echo_srv.msgReq, &echo_srv.msgRes,
+  //                                       echo_service_callback));
+  RCSOFTCHECK(rclc_executor_add_subscription(
+      &executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA));
+
+  // wait for first new data to arrive from pid_request topic
+  // pid_request_msg->stop = true;
+
+  Serial5.print("end setup\n");
+
+  return true;
+}
+
+void destroy_entities() {
+  rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
+  (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
+
+  // destroy publishers
+  voltage_pub.destroy(node);
+  humidity_pub.destroy(node);
+  leak_pub.destroy(node);
+  pressure_pub.destroy(node);
+  imu_pub.destroy(node);
+
+  // destroy services
+  // gps_srv.destroy(node);
+  // echo_srv.destroy(node);
+
+  // destroy everything else
+  rcl_subscription_fini(&subscriber, &node);
+  rcl_publisher_fini(&pid_publisher, &node);
+  rcl_publisher_fini(&nav_publisher, &node);
+  rcl_timer_fini(&timer);
+  rcl_timer_fini(&timer1);
+  rclc_executor_fini(&executor);
+  rcl_node_fini(&node);
+  rclc_support_fini(&support);
+}
+
+void setup() {
+
+  Serial.begin(BAUD_RATE);
+  set_microros_serial_transports(Serial);
+  imu_pub.imu_setup();
+  pin_setup();
+
+  state = WAITING_AGENT;
+}
+
 void loop() {
   // Serial5.println("loop enter");
   // imu_pub.imu_update();
@@ -353,9 +373,8 @@ void loop() {
     EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
                                         ? AGENT_CONNECTED
                                         : AGENT_DISCONNECTED;);
+
     if (state == AGENT_CONNECTED) {
-      // run_pid();
-      //delay(1);
       rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
     }
     break;

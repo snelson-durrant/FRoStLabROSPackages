@@ -14,7 +14,7 @@ public:
     gps_serial.begin(GPS_RATE);
     GNSS.begin(gps_serial);
 
-    RCCHECK(rclc_publisher_init_default(
+    RCCHECK(rclc_publisher_init_best_effort(
         &publisher, &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, GPS), "gps_data"));
   }

@@ -11,7 +11,7 @@ public:
 
     pinMode(LEAK_PIN, INPUT);
 
-    RCCHECK(rclc_publisher_init_default(
+    RCCHECK(rclc_publisher_init_best_effort(
         &publisher, &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Leak),
         "leak_detected"));

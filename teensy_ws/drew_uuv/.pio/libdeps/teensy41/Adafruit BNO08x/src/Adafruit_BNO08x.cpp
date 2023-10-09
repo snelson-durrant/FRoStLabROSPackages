@@ -657,21 +657,7 @@ static void hal_callback(void *cookie, sh2_AsyncEvent_t *pEvent) {
 static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
   int rc;
 
-  Serial5.println("Got an event!");
-
   rc = sh2_decodeSensorEvent(_sensor_value, event);
-  switch (_sensor_value->sensorId) {
-      case SH2_LINEAR_ACCELERATION:
-        Serial5.println("Got 1");
-        break;
-      case SH2_ARVR_STABILIZED_RV:
-        Serial5.println("Got 2");
-        break;
-  }
-
-  if (_sensor_value->timestamp == 0) {
-    Serial5.println("But is zero");
-  }
 
   if (rc != SH2_OK) {
     Serial5.println("BNO08x - Error decoding sensor event");
