@@ -19,6 +19,28 @@ int thruster_pos = 0;
 
 int count = 0;
 
+void tick_sm() {
+
+        if (count < 4) {
+                my_servo1.write(90);
+                my_servo2.write(60);
+                my_servo3.write(120);
+                thruster.writeMicroseconds(1600);
+                count++;
+        } else if (count < 11) {
+                my_servo1.write(45);
+                my_servo2.write(90);
+                my_servo3.write(90);
+                thruster.writeMicroseconds(1600);
+                count++;
+        } else {
+                my_servo1.write(90);
+                my_servo2.write(90);
+                my_servo3.write(90);
+                thruster.writeMicroseconds(1500);
+        }
+}
+
 void setup_servo() {
 
     pinMode(servo_pin1, OUTPUT);
@@ -44,24 +66,3 @@ void loop_servo() {
 	delay(1000);
 }
 
-void tick_sm() {
-
-	if (count < 10) {
-		my_servo1.write(90);
-		my_servo2.write(60);
-		my_servo3.write(120);
-		thruster.writeMicroseconds(1550);
-		count++;
-	} else if (count < 20) {
-		my_servo1.write(45);
-		my_servo2.write(90);
-		my_servo3.write(90);
-		thruster.writeMicroseconds(1550);
-		count++;
-	} else {
-		my_servo1.write(90);
-		my_servo2.write(90);
-		my_servo3.write(90);
-		thruster.writeMicroseconds(1500);
-	}
-}

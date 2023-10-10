@@ -137,7 +137,7 @@ void calculate_velocity() { // Could make function with pointers so it can
 
 float filter_accelerometer(float accelx, float rawaccel){
   
-  return 
+  return;
 }
         
 void setReports(void) {
@@ -239,7 +239,7 @@ void loop_imu() {
         // Serial.print("Linear Acceration - x: ");
         // Serial.print(sensorValue.un.linearAcceleration.x);
         linear_accel_x = sensorValue.un.linearAcceleration.x;
-        linear_accel_x = filter
+        // linear_accel_x = filter
         // Serial.print(" y: ");
         // Serial.print(sensorValue.un.linearAcceleration.y);
         // Serial.print(" z: ");
