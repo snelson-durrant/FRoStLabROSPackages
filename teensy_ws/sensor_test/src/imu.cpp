@@ -6,7 +6,8 @@
 #define SERVO_PIN1 9
 #define THRUSTER_PIN 10
 Servo my_servo;
-Servo my_thruster; 
+Servo my_servo2;
+Servo my_servo3; 
 // PID Objects
 #define HEADING_P 0.6
 #define HEADING_I 0.05
@@ -14,11 +15,12 @@ PID_Control Heading(HEADING_P, HEADING_I, 40, 140, 90);
 #define VELOCITY_P 0.6
 #define VELOCITY_I 0.05
 PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
-#define DEPTH_P 0.2
-#define DEPTH_I 0.05
+#define DEPTH_P 0.9
+#define DEPTH_I 0.09
 PID_Control Depth(DEPTH_P, DEPTH_I, 45, 135, 90);
 float goal_heading = 275;
 float goal_velocity = 3.0;
+float goal_pitch = 180;
 
 float input;
 float output;
@@ -42,7 +44,7 @@ unsigned long prev_time_2 = 0;
 
 float returnYaw(){return ypr.yaw + 180.00;}
 double returnVel(){return velocity;}
-
+float returnPitch(){return ypr.pitch +180.00;}
 
 
 
@@ -54,6 +56,8 @@ void setup_PID(){
 }
 
 int compute_heading(float heading_curr){          //TODO: Make the parameter a pointer directly to the heading 
+    static float input;
+    static float output;
     // Serial.print("Heading: ");
     // Serial.println(heading_curr);
     if(goal_heading > heading_curr){
@@ -74,17 +78,47 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
     }
     // Serial.print("Input: ");
     // Serial.println(input);
-    output = Heading.compute(goal_heading, heading_curr);    
+    output = Heading.compute(goal_heading, input);    //FIX THIS NOW
+    // Serial.print("output");
+    // Serial.println(output);
+    return int(output);
+  }
+
+  int compute_depth(float pitch_curr){          //TODO: Make the parameter a pointer directly to the heading 
+    static float input;
+    static float output;
+    if(goal_pitch > pitch_curr){
+        if((360 - goal_pitch + pitch_curr) < (goal_pitch - pitch_curr)){
+            input = -1 * (360 - goal_pitch + pitch_curr);
+        }
+        else{
+            input = goal_pitch - pitch_curr;
+        }
+    }
+    else{ // add this to nav
+      if((360 - pitch_curr + goal_pitch) < (pitch_curr - goal_pitch)){
+          input = (360 - pitch_curr + goal_pitch);
+      }
+      else{
+          input = goal_pitch - pitch_curr;
+      }
+    }
+    // Serial.print("Input: ");
+    // Serial.println(input);
+    output = Depth.compute(goal_pitch, input);    //FIX THIS NOW
     // Serial.print("output");
     // Serial.println(output);
     return int(output);
   }
 
 void PID_loop(){
-  int servo1_angle = compute_heading(returnYaw());      //TODO: make this with pointers
+  int servo2_angle = compute_heading(returnYaw());      //TODO: make this with pointers
   // Serial.print("Servo Angle: ");
   //Serial.println(servo1_angle);
-  my_servo.write(servo1_angle);
+  my_servo2.write(servo2_angle);
+
+  int servo_depth = compute_heading()
+
 
   int thruster_speed = Velocity.compute(goal_velocity, returnVel());    
   int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
@@ -142,39 +176,12 @@ float filter_accelerometer(float accelx, float rawaccel){
         
 void setReports(void) {
     Serial.println("Setting desired reports");
-    // if (!bno08x.enableReport(SH2_ACCELEROMETER)) {
-    //   Serial.println("Could not enable accelerometer");
-    // }
-    // if (!bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED)) {
-    //   Serial.println("Could not enable gyroscope");
-    // }
-    // if (!bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED)) {
-    //   Serial.println("Could not enable magnetic field calibrated");
-    // }
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial.println("Could not enable linear acceleration");
     }
     if (! bno08x.enableReport(reportType)) {
     Serial.println("Could not enable stabilized remote vector");
     }
-    // if (!bno08x.enableReport(SH2_GRAVITY)) {
-    //   Serial.println("Could not enable gravity vector");
-    // }
-    // if (!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
-    //   Serial.println("Could not enable rotation vector");
-    // }
-    // if (!bno08x.enableReport(SH2_GEOMAGNETIC_ROTATION_VECTOR)) {
-    //   Serial.println("Could not enable geomagnetic rotation vector");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_ACCELEROMETER)) {
-    //   Serial.println("Could not enable raw accelerometer");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_GYROSCOPE)) {
-    //   Serial.println("Could not enable raw gyroscope");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_MAGNETOMETER)) {
-    //   Serial.println("Could not enable raw magnetometer");
-    // }
   }
 
 void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees = false) {
@@ -249,13 +256,13 @@ void loop_imu() {
         break;
       case SH2_ARVR_STABILIZED_RV:
         quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
-        // now = micros();
-        // Serial.print(now - last);             Serial.print("\t");
-        // last = now;
-        // Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
-        // Serial.print(ypr.yaw);                Serial.print("\t");
-        // Serial.print(ypr.pitch);              Serial.print("\t");
-        // Serial.println(ypr.roll);
+        now = micros();
+        Serial.print(now - last);             Serial.print("\t");
+        last = now;
+        Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
+        Serial.print(ypr.yaw);                Serial.print("\t");
+        Serial.print(ypr.pitch);              Serial.print("\t");
+        Serial.println(ypr.roll);
         break;
       
     }
