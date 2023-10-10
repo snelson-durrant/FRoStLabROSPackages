@@ -11,7 +11,7 @@ public:
     float pitch;
     float roll;
   } ypr;
-
+ 
   void setReports(void) {
     if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
       Serial5.println("Could not enable linear acceleration");
