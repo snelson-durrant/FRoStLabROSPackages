@@ -17,6 +17,8 @@ int servo2_pos = 0;
 int servo3_pos = 0;
 int thruster_pos = 0;
 
+int count = 0;
+
 void setup_servo() {
 
     pinMode(servo_pin1, OUTPUT);
@@ -34,18 +36,32 @@ void setup_servo() {
 	my_servo3.write(default_pos_servo);
     thruster.writeMicroseconds(default_pos_thruster);
 	delay(7000);
-
-
 }
 
 void loop_servo() {
 
-    my_servo1.write(servo1_pos);
-	my_servo2.write(servo2_pos);
-	my_servo3.write(servo3_pos);
-	//int thrusterValue = map(0, 100, 1500, 2000);
-	thruster.writeMicroseconds(thruster_pos);
+	tick_sm();
+	delay(1000);
+}
 
+void tick_sm() {
 
-
+	if (count < 10) {
+		my_servo1.write(90);
+		my_servo2.write(60);
+		my_servo3.write(120);
+		thruster.writeMicroseconds(1550);
+		count++;
+	} else if (count < 20) {
+		my_servo1.write(45);
+		my_servo2.write(90);
+		my_servo3.write(90);
+		thruster.writeMicroseconds(1550);
+		count++;
+	} else {
+		my_servo1.write(90);
+		my_servo2.write(90);
+		my_servo3.write(90);
+		thruster.writeMicroseconds(1500);
+	}
 }
