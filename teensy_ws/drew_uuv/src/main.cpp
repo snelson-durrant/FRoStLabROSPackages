@@ -92,6 +92,8 @@ enum states {
   AGENT_DISCONNECTED
 } state;
 
+bool already_setup = false;
+
 // responds to errors with micro-ROS functions
 void error_loop() {
   while (1) {
@@ -155,13 +157,13 @@ void run_pid() {
     int thruster_speed = Velocity.compute(pid_request_msg->velocity, imu_pub.returnVel());    
     int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
     // TODO: use this code to write to the servos and thruster
-    my_servo1.write(servo1_angle);
-    my_servo2.write(servo2_angle);
+    my_servo1.write(90);
+    my_servo2.write(servo1_angle);
     Serial5.print("Thruster Value: ");
-    Serial5.print(map(thruster_speed, 0, 100, 1500, 2000))
+    Serial5.print(map(thruster_speed, 0, 100, 1500, 2000));
     my_servo3.write(90);
     int thrusterValue =
-        map(0, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
+        map(pid_request_msg->velocity, LOW_FINAL, HIGH_FINAL, LOW_INITIAL, HIGH_INITIAL);
     thruster.writeMicroseconds(thrusterValue);
   } else {
 
@@ -218,13 +220,13 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
     current = millis();
     Serial5.println(current - last_timer);
     last_timer = current;
-    voltage_pub.publish();
-    humidity_pub.publish();
-    leak_pub.publish();
-    pressure_pub.publish();
-    imu_pub.publish();
-    RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-    RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+    // voltage_pub.publish();
+    // humidity_pub.publish();
+    // leak_pub.publish();
+    // pressure_pub.publish();
+    // imu_pub.publish();
+    // RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
+    // RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
   }
 
 }
@@ -312,6 +314,11 @@ bool create_entities() {
   // wait for first new data to arrive from pid_request topic
   pid_request_msg->stop = true;
 
+  if (!already_setup) {
+	imu_pub.imu_setup();
+	already_setup = true;
+  }
+
   Serial5.print("end setup\n");
 
   return true;
@@ -347,7 +354,7 @@ void setup() {
 
   Serial.begin(BAUD_RATE);
   set_microros_serial_transports(Serial);
-  imu_pub.imu_setup();
+  // imu_pub.imu_setup();
   pin_setup();
 
   state = WAITING_AGENT;
