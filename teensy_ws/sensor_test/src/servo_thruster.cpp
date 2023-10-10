@@ -6,9 +6,9 @@ Servo my_servo2;
 Servo my_servo3;
 Servo thruster;
 
-int servo_pin1 = 9;
-int servo_pin2 = 10;
-int servo_pin3 = 11;
+int servo_pin1 = 10;
+int servo_pin2 = 11;
+int servo_pin3 = 9;
 int thruster_pin = 12;
 int default_pos_servo = 90;
 int default_pos_thruster = 1500;
@@ -21,13 +21,13 @@ int count = 0;
 
 void tick_sm() {
 
-        if (count < 4) {
-                my_servo1.write(90);
-                my_servo2.write(60);
-                my_servo3.write(120);
+        if (count < 8) {
+                my_servo1.write(60);
+                my_servo2.write(20);
+                my_servo3.write(100);
                 thruster.writeMicroseconds(1600);
                 count++;
-        } else if (count < 11) {
+        } else if (false) {
                 my_servo1.write(45);
                 my_servo2.write(90);
                 my_servo3.write(90);
