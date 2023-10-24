@@ -21,24 +21,31 @@ int count = 0;
 
 void tick_sm() {
 
-        if (count < 8) {
-                my_servo1.write(60);
-                my_servo2.write(20);
+        if (count < 3) {
+                my_servo1.write(90);
+                my_servo2.write(80);
                 my_servo3.write(100);
                 thruster.writeMicroseconds(1600);
                 count++;
-        } else if (false) {
-                my_servo1.write(45);
-                my_servo2.write(90);
-                my_servo3.write(90);
+        } else if (count < 33) {
+                my_servo1.write(40);
+                my_servo2.write(87);
+                my_servo3.write(93);
                 thruster.writeMicroseconds(1600);
                 count++;
+        } else if (false) {
+                my_servo1.write(70);
+                my_servo2.write(70);
+                my_servo3.write(70);
+                thruster.writeMicroseconds(1600);
+		count++;
         } else {
-                my_servo1.write(90);
+
+		my_servo1.write(90);
                 my_servo2.write(90);
                 my_servo3.write(90);
-                thruster.writeMicroseconds(1500);
-        }
+        	thruster.writeMicroseconds(1500);
+	}
 }
 
 void setup_servo() {
