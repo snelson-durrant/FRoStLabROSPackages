@@ -3,12 +3,10 @@
 #include <Wire.h>
 #include <PID.h>
 #include <Servo.h>
-#define SERVO_PIN1 11
-#define SERVO_PIN2 10
-#define SERVO_PIN3 9
-Servo my_servo12;
-Servo my_servo22;
-Servo my_servo32; 
+#define SERVO_PIN1 9
+#define THRUSTER_PIN 10
+Servo my_servo;
+Servo my_thruster; 
 // PID Objects
 #define HEADING_P 0.6
 #define HEADING_I 0.05
@@ -16,10 +14,10 @@ PID_Control Heading(HEADING_P, HEADING_I, 35, 145, 90);
 #define VELOCITY_P 0.6
 #define VELOCITY_I 0.05
 PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
-#define DEPTH_P 0.9
-#define DEPTH_I 0.09
-PID_Control Depth(DEPTH_P, DEPTH_I, 35, 145, 90);
-float goal_heading = 185;
+#define DEPTH_P 0.2
+#define DEPTH_I 0.05
+PID_Control Depth(DEPTH_P, DEPTH_I, 45, 135, 90);
+float goal_heading = 275;
 float goal_velocity = 3.0;
 float goal_pitch = 180;
 
@@ -81,44 +79,17 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
     }
     // Serial.print("Input: ");
     // Serial.println(input);
-    output = Heading.compute(0, input);    //FIX THIS NOW
-    // Serial.print("output");
-    // Serial.println(output);
-    return int(output);
-  }
-
-  int compute_depth(float pitch_curr){          //TODO: Make the parameter a pointer directly to the heading 
-    static float input;
-    static float output;
-    if(goal_pitch > pitch_curr){
-        if((360 - goal_pitch + pitch_curr) < (goal_pitch - pitch_curr)){
-            input = -1 * (360 - goal_pitch + pitch_curr);
-        }
-        else{
-            input = goal_pitch - pitch_curr;
-        }
-    }
-    else{ // add this to nav
-      if((360 - pitch_curr + goal_pitch) < (pitch_curr - goal_pitch)){
-          input = (360 - pitch_curr + goal_pitch);
-      }
-      else{
-          input = goal_pitch - pitch_curr;
-      }
-    }
-    // Serial.print("Input: ");
-    // Serial.println(input);
-    output = Depth.compute(0, input);    //FIX THIS NOW
+    output = Heading.compute(goal_heading, heading_curr);    
     // Serial.print("output");
     // Serial.println(output);
     return int(output);
   }
 
 void PID_loop(){
-  int servo1_angle = compute_heading(returnYaw());      //TODO: make this with pointers
+  int servo2_angle = compute_heading(returnYaw());      //TODO: make this with pointers
   // Serial.print("Servo Angle: ");
   //Serial.println(servo1_angle);
-  my_servo12.write(servo1_angle);
+  my_servo.write(servo1_angle);
 
   int servo2_angle = compute_depth(returnPitch());
   my_servo22.write(servo2_angle);
