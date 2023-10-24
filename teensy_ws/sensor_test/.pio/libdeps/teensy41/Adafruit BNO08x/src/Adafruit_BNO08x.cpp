@@ -104,9 +104,7 @@ Adafruit_BNO08x::~Adafruit_BNO08x(void) {
  */
 bool Adafruit_BNO08x::begin_I2C(uint8_t i2c_address, TwoWire *wire,
                                 int32_t sensor_id) {
-  if (i2c_dev) {
-    delete i2c_dev; // remove old interface
-  }
+  delete i2c_dev; // remove old interface
 
   i2c_dev = new Adafruit_I2CDevice(i2c_address, wire);
 
@@ -189,6 +187,7 @@ bool Adafruit_BNO08x::_init(int32_t sensor_id) {
   int status;
 
   hardwareReset();
+  //sh2_close();
 
   // Open SH2 interface (also registers non-sensor event handler.)
   status = sh2_open(&_HAL, hal_callback, NULL);
@@ -200,6 +199,7 @@ bool Adafruit_BNO08x::_init(int32_t sensor_id) {
   memset(&prodIds, 0, sizeof(prodIds));
   status = sh2_getProdIds(&prodIds);
   if (status != SH2_OK) {
+    Serial.println("here 2");
     return false;
   }
 

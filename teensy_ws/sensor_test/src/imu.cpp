@@ -1,146 +1,253 @@
 #include <Adafruit_BNO08x.h>
 #include <Arduino.h>
+#include <Wire.h>
+#include <PID.h>
+#include <Servo.h>
+#define SERVO_PIN1 9
+#define THRUSTER_PIN 10
+Servo my_servo;
+Servo my_thruster; 
+// PID Objects
+#define HEADING_P 0.6
+#define HEADING_I 0.05
+PID_Control Heading(HEADING_P, HEADING_I, 35, 145, 90);
+#define VELOCITY_P 0.6
+#define VELOCITY_I 0.05
+PID_Control Velocity(VELOCITY_P, VELOCITY_I, 0, 100, 0);
+#define DEPTH_P 0.2
+#define DEPTH_I 0.05
+PID_Control Depth(DEPTH_P, DEPTH_I, 45, 135, 90);
+float goal_heading = 275;
+float goal_velocity = 3.0;
+float goal_pitch = 180;
 
-Adafruit_BNO08x bno08x;
+float input;
+float output;
+
+struct euler_t {
+  float yaw;
+  float pitch;
+  float roll;
+} ypr;
+
+Adafruit_BNO08x bno08x(-1);
 sh2_SensorValue_t sensorValue;
-        
-void setReports() {
 
-    printf("Setting desired reports");
-    if (!bno08x.enableReport(SH2_ACCELEROMETER)) {
-        Serial.println("Could not enable accelerometer");
-    }
-    if (!bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED)) {
-        Serial.println("Could not enable gyroscope");
-    }
-    if (!bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED)) {
-        Serial.println("Could not enable magnetic field calibrated");
-    }
-    if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
-        Serial.println("Could not enable linear acceleration");
-    }
-    // if (!bno08x.enableReport(SH2_GRAVITY)) {
-    //     Serial.println("Could not enable gravity vector");
-    // }
-    // if (!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
-    //     Serial.println("Could not enable rotation vector");
-    // }  
-    // if (!bno08x.enableReport(SH2_GEOMAGNETIC_ROTATION_VECTOR)) {
-    //     Serial.println("Could not enable geomagnetic rotation vector");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_ACCELEROMETER)) {
-    //     Serial.println("Could not enable raw accelerometer");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_GYROSCOPE)) {
-    //     Serial.println("Could not enable raw gyroscope");
-    // }
-    // if (!bno08x.enableReport(SH2_RAW_MAGNETOMETER)) {
-    //     Serial.println("Could not enable raw magnetometer");
-    // }
+float linear_accel_x;
+int n_time = 0;
+double velocity = 0;
+float prev_accel_1 = 0;
+float prev_accel_2 = 0;
+unsigned long prev_time_1 = 0;
+unsigned long prev_time_2 = 0;
+
+float returnYaw(){return ypr.yaw + 180.00;}
+double returnVel(){return velocity;}
+float returnPitch(){return ypr.pitch +180.00;}
+
+
+
+void setup_PID(){
+  my_servo12.attach(SERVO_PIN1);
+  my_servo12.write(90);
+  my_servo22.attach(SERVO_PIN2);
+  my_servo22.write(90);
+  my_servo32.attach(SERVO_PIN3);
+  my_servo32.write(90);
 }
 
+int compute_heading(float heading_curr){          //TODO: Make the parameter a pointer directly to the heading 
+    static float input;
+    static float output;
+    // Serial.print("Heading: ");
+    // Serial.println(heading_curr);
+    if(goal_heading > heading_curr){
+        if((360 - goal_heading + heading_curr) < (goal_heading - heading_curr)){
+            input = -1 * (360 - goal_heading + heading_curr);
+        }
+        else{
+            input = goal_heading - heading_curr;
+        }
+    }
+    else{ // add this to nav
+      if((360 - heading_curr + goal_heading) < (heading_curr - goal_heading)){
+          input = (360 - heading_curr + goal_heading);
+      }
+      else{
+          input = goal_heading - heading_curr;
+      }
+    }
+    // Serial.print("Input: ");
+    // Serial.println(input);
+    output = Heading.compute(goal_heading, heading_curr);    
+    // Serial.print("output");
+    // Serial.println(output);
+    return int(output);
+  }
+
+void PID_loop(){
+  int servo2_angle = compute_heading(returnYaw());      //TODO: make this with pointers
+  // Serial.print("Servo Angle: ");
+  //Serial.println(servo1_angle);
+  my_servo.write(servo1_angle);
+
+  int servo2_angle = compute_depth(returnPitch());
+  my_servo22.write(servo2_angle);
+  static int servo3_angle;
+  if(servo2_angle > 90){
+    servo3_angle = 90 - (servo2_angle - 90);
+  }
+  else{
+    servo3_angle = 90 + (90-servo2_angle);
+  }
+  my_servo32.write(servo3_angle);
+  // int thruster_speed = Velocity.compute(goal_velocity, returnVel());    
+  // int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
+  // my_thruster.write(servo2_angle);
+  // Serial.print("Thruster Angle: ");
+  // Serial.println(servo2_angle);
+  //int thruster = compute_velocity(returnVel());
+}
+
+//#define FAST_MODE
+#ifdef FAST_MODE
+  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
+  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
+  long reportIntervalUs = 2000;
+#else
+  // Top frequency is about 250Hz but this report is more accurate
+  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+  long reportIntervalUs = 5000;
+#endif
+
+
+
+void calculate_velocity() { // Could make function with pointers so it can
+                            // calculate all velocities
+  if (n_time < 2) {
+    prev_time_2 = prev_time_1;
+    prev_time_1 = micros();
+    prev_accel_2 = prev_accel_1;
+    prev_accel_1 = linear_accel_x;
+    n_time++;
+  } else {
+    unsigned long current_time = micros();
+    float delta_time = (current_time - prev_time_2) * 1e-6;
+    velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) *
+                delta_time / 6.0;
+    // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;
+    // //trapezoidal prev_time = micros(); prev_accel = linear_accel_x;
+    prev_time_2 = prev_time_1;
+    prev_time_1 = current_time;
+    prev_accel_2 = prev_accel_1;
+    prev_accel_1 = linear_accel_x;
+    Serial.println("Velocity: ");
+    Serial.print(velocity*1000);
+    Serial.print("\t");
+    Serial.print(linear_accel_x*1000);
+    Serial.print("\t");
+    Serial.println(delta_time*1000);
+  }
+}
+
+// float filter_accelerometer(float accelx, float rawaccel){
+  
+//   return 
+// }
+        
+void setReports(void) {
+    Serial.println("Setting desired reports");
+    if (!bno08x.enableReport(SH2_LINEAR_ACCELERATION)) {
+      Serial.println("Could not enable linear acceleration");
+    }
+    if (! bno08x.enableReport(reportType)) {
+    Serial.println("Could not enable stabilized remote vector");
+    }
+  }
+
+void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees = false) {
+
+    float sqr = sq(qr);
+    float sqi = sq(qi);
+    float sqj = sq(qj);
+    float sqk = sq(qk);
+
+    ypr->yaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr));
+    ypr->pitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr));
+    ypr->roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr));
+
+    if (degrees) {
+      ypr->yaw *= RAD_TO_DEG;
+      ypr->pitch *= RAD_TO_DEG;
+      ypr->roll *= RAD_TO_DEG;
+    }
+}
+
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
+}
+
+void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
+}
+
+
 void setup_imu() {
-    
-    while(!bno08x.begin_I2C()) {
+    // Wire2.begin(BNO08x_I2CADDR_DEFAULT);
+    Wire2.begin();
+    while(!bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0)) {
         Serial.println("Failed to find BNO08x chip");
-        // while (1) {
-        //     delay(10);
-        //     Serial.print("IMU is not on");
-        // }
-        delay(10);
+        Serial.println(millis());
+        delay(100);
+        // bno08x.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
     }
 
     Serial.println("BNO08x Found!");
     setReports();
     Serial.println("Reading events");
-
+    setup_PID();
 }
 
+long now;
+static long last =0;
+
 void loop_imu() {
-    
-    
-    if (bno08x.wasReset()) {
+  PID_loop();
+  if (bno08x.wasReset()) {
     Serial.print("sensor was reset ");
     setReports();
   }
 
-  if (!bno08x.getSensorEvent(&sensorValue)) {
-    return;
+
+  if (bno08x.getSensorEvent(&sensorValue)) {
+    // in this demo only one report type will be received depending on FAST_MODE define (above)
+    //Serial.println("Here");
+    switch (sensorValue.sensorId) {
+      case SH2_LINEAR_ACCELERATION:
+        // Serial.print("Linear Acceration - x: ");
+        // Serial.print(sensorValue.un.linearAcceleration.x);
+        linear_accel_x = sensorValue.un.linearAcceleration.x;
+        // linear_accel_x = filter
+        // Serial.print(" y: ");
+        // Serial.print(sensorValue.un.linearAcceleration.y);
+        // Serial.print(" z: ");
+        // Serial.println(sensorValue.un.linearAcceleration.z);
+        calculate_velocity();
+        
+        break;
+      case SH2_ARVR_STABILIZED_RV:
+        quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
+        now = micros();
+        Serial.print(now - last);             Serial.print("\t");
+        last = now;
+        Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
+        Serial.print(ypr.yaw);                Serial.print("\t");
+        Serial.print(ypr.pitch);              Serial.print("\t");
+        Serial.println(ypr.roll);
+        break;
+      
+    }
   }
 
-  switch (sensorValue.sensorId) {
-
-  case SH2_ACCELEROMETER:
-    Serial.print("Accelerometer - x: ");
-    Serial.print(sensorValue.un.accelerometer.x);
-    Serial.print(" y: ");
-    Serial.print(sensorValue.un.accelerometer.y);
-    Serial.print(" z: ");
-    Serial.println(sensorValue.un.accelerometer.z);
-    break;
-  case SH2_GYROSCOPE_CALIBRATED:
-    Serial.print("Gyro - x: ");
-    Serial.print(sensorValue.un.gyroscope.x);
-    Serial.print(" y: ");
-    Serial.print(sensorValue.un.gyroscope.y);
-    Serial.print(" z: ");
-    Serial.println(sensorValue.un.gyroscope.z);
-    break;
-  case SH2_MAGNETIC_FIELD_CALIBRATED:
-    Serial.print("Magnetic Field - x: ");
-    Serial.print(sensorValue.un.magneticField.x);
-    Serial.print(" y: ");
-    Serial.print(sensorValue.un.magneticField.y);
-    Serial.print(" z: ");
-    Serial.println(sensorValue.un.magneticField.z);
-    break;
-  case SH2_LINEAR_ACCELERATION:
-    Serial.print("Linear Acceration - x: ");
-    Serial.print(sensorValue.un.linearAcceleration.x);
-    Serial.print(" y: ");
-    Serial.print(sensorValue.un.linearAcceleration.y);
-    Serial.print(" z: ");
-    Serial.println(sensorValue.un.linearAcceleration.z);
-    break;
-  }
-    
-    // float accel_x=sensorValue.un.accelerometer.x;
-    // float accel_y=sensorValue.un.accelerometer.y;
-    // float accel_z=sensorValue.un.accelerometer.z;
-    // float gyro_x=sensorValue.un.gyroscope.x;
-    // float gyro_y=sensorValue.un.gyroscope.y;
-    // float gyro_z=sensorValue.un.gyroscope.z;
-    // float mag_x=sensorValue.un.magneticField.x;
-    // float mag_y=sensorValue.un.magneticField.y;
-    // float mag_z=sensorValue.un.magneticField.z;
-    // float lin_accel_x=sensorValue.un.linearAcceleration.x;
-    // float lin_accel_y=sensorValue.un.linearAcceleration.y;
-    // float lin_accel_z=sensorValue.un.linearAcceleration.z;
-    // float grav_x=sensorValue.un.gravity.x;
-    // float grav_y=sensorValue.un.gravity.y;
-    // float grav_z=sensorValue.un.gravity.z;
-    // float rot_vec_i=sensorValue.un.rotationVector.i;
-    // float rot_vec_j=sensorValue.un.rotationVector.j;
-    // float rot_vec_k=sensorValue.un.rotationVector.k;
-    // float geomag_rot_vec_i=sensorValue.un.geoMagRotationVector.i;
-    // float geomag_rot_vec_j=sensorValue.un.geoMagRotationVector.j;
-    // float geomag_rot_vec_k=sensorValue.un.geoMagRotationVector.k;
-    // float raw_accel_x=sensorValue.un.rawAccelerometer.x;
-    // float raw_accel_y=sensorValue.un.rawAccelerometer.y;
-    // float raw_accel_z=sensorValue.un.rawAccelerometer.z;
-    // float raw_gyro_x=sensorValue.un.rawGyroscope.x;
-    // float raw_gyro_y=sensorValue.un.rawGyroscope.y;
-    // float raw_gyro_z=sensorValue.un.rawGyroscope.z;
-    // float raw_mag_x=sensorValue.un.rawMagnetometer.x;
-    // float raw_mag_y=sensorValue.un.rawMagnetometer.y;
-    // float raw_mag_z=sensorValue.un.rawMagnetometer.z;
-    // Serial.print("acceleromerter x: ");
-    // Serial.println(accel_x);
-    // Serial.print("acceleromerter y: ");
-    // Serial.println(accel_y);
-    // Serial.print("acceleromerter z: ");
-    // Serial.println(accel_z);
 
 }
-
-     

@@ -26,8 +26,6 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 
-#define Wire Wire2
-
 #define BNO08x_I2CADDR_DEFAULT 0x4A ///< The default I2C address
 
 /* Additional Activities not listed in SH-2 lib */
@@ -56,6 +54,7 @@ public:
 
   bool enableReport(sh2_SensorId_t sensor, uint32_t interval_us = 10000);
   bool getSensorEvent(sh2_SensorValue_t *value);
+  sh2_SensorValue_t getHackSensorEvent();
 
   sh2_ProductIds_t prodIds; ///< The product IDs returned by the sensor
 

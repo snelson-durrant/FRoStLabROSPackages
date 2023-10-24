@@ -12,7 +12,7 @@ public:
   void setup(rcl_node_t node) {
     ina260.begin(INA260_I2CADDR_DEFAULT, &Wire2);
 
-    RCCHECK(rclc_publisher_init_default(
+    RCCHECK(rclc_publisher_init_best_effort(
         &publisher, &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Volt), "voltage"));
 
