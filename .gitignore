@@ -14,11 +14,9 @@
 !/teensy_ws/drew_uuv/custom.meta
 !/teensy_ws/drew_uuv/src/
 !/teensy_ws/drew_uuv/extra_packages/
-!/teensy_ws/drew_uuv/.pio/
 !/teensy_ws/sensor_test/
 /teensy_ws/sensor_test/*
 !/teensy_ws/sensor_test/platformio.ini
 !/teensy_ws/sensor_test/src/
-!/teensy_ws/sensor_test/.pio/
 !/teensy_ws/sensor_test/include/
 
