@@ -65,7 +65,7 @@ public:
       delay(100);
     }
     setReports();
-    bno08x.getSensorEvent(&fillerValue);
+    bno08x.getSensorEvent(&sensorValue);
   }
 
   float returnYaw() { return ypr.yaw + 180.00; }
@@ -85,7 +85,7 @@ public:
       velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) *
                   delta_time / 6.0;
       // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;
-      // //trapezoidal prev_time = micros(); prev_accel = linear_accel_x;
+      // trapezoidal prev_time = micros(); prev_accel = linear_accel_x;
       prev_time_2 = prev_time_1;
       prev_time_1 = current_time;
       prev_accel_2 = prev_accel_1;
@@ -132,7 +132,6 @@ public:
 private:
   Adafruit_BNO08x bno08x;
   sh2_SensorValue_t sensorValue;
-  sh2_SensorValue_t fillerValue;
 
   sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
   long report_interval = 10000;

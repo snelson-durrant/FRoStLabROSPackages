@@ -12,22 +12,28 @@ class PressurePub : Publisher {
 public:
   void setup(rcl_node_t node) {
 
-    pressure_sensor.init();
-
-    pressure_calibrate();
-
     RCCHECK(rclc_publisher_init_best_effort(
         &publisher, &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Depth),
         "depth_data"));
   }
 
-  void publish() {
+  void pressure_setup() {
+
+    pressure_sensor.init();
+    pressure_calibrate();
+  }
+
+  void pressure_update() {
 
     pressure_sensor.read();
     msg.pressure = pressure_sensor.pressure(); // - pressure_at_zero_depth
     msg.depth = pressure_sensor.depth() - depth_error_at_zero_depth;
     msg.temperature = pressure_sensor.temperature();
+  }
+
+  void publish() {
+
     msg.header.stamp.nanosec = rmw_uros_epoch_nanos();
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
   }
