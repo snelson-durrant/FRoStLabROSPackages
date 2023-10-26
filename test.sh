@@ -12,13 +12,13 @@ echo ""
 echo "TESTING PID REQUEST..."
 ros2 topic pub -1 /pid_request frost_interfaces/msg/PID '{velocity: 0.0, yaw: 90.0, pitch: 0.0, roll: 0.0, depth: 0.0}'
 
-echo ""
-echo "READING PID ACTUAL..."
-ros2 topic echo --once /pid_actual
+# echo ""
+# echo "READING PID ACTUAL..."
+# ros2 topic echo --once /pid_actual
 
-echo ""
-echo "READING NAV COMMANDS..."
-ros2 topic echo --once /nav_commands
+# echo ""
+# echo "READING NAV COMMANDS..."
+# ros2 topic echo --once /nav_commands
 
 echo ""
 echo "CALLING GPS SERVICE..."
@@ -28,13 +28,13 @@ echo ""
 echo "CALLING ECHO SERVICE..."
 ros2 service call /echo_service frost_interfaces/srv/GetEcho "{test: True}"
 
-echo ""
-echo "READING IMU DATA..."
-ros2 topic echo --once /imu_data
+# echo ""
+# echo "READING IMU DATA..."
+# ros2 topic echo --once /imu_data
 
-echo ""
-echo "READING DEPTH DATA..."
-ros2 topic echo --once /depth_data
+# echo ""
+# echo "READING DEPTH DATA..."
+# ros2 topic echo --once /depth_data
 
 echo ""
 echo "READING LEAK DATA (TRIGGER LEAK SENSOR)..."

@@ -1,13 +1,15 @@
 #!/bin/bash
 
-# sudo udevadm trigger
-
-echo -e "\e[38;5;6m _   _ _  _  ___ _    ___   ___  ___ _____      __  _   ___   __\e[0m"
-echo -e "\e[38;5;6m| | | | \| |/ __| |  | __| |   \| _ \ __\ \    / / | | | \ \ / /  ()\e[0m"
-echo -e "\e[38;5;6m| |_| | .\` | (__| |__| _|  | |) |   / _| \ \/\/ /  | |_| |\ V /      ()\e[0m"
-echo -e "\e[38;5;6m \___/|_|\_|\___|____|___| |___/|_|_\___| \_/\_/    \___/  \_/   () \e[0m"
+echo -e "\e[38;5;6m  /$$$$$$            /$$   /$$  /$$$$$$   /$$$$$$  /$$$$$$$   /$$$$$$ \e[0m"
+echo -e "\e[38;5;6m /$$__  $$          | $$  | $$ /$$__  $$ /$$__  $$| $$__  $$ /$$__  $$\e[0m"
+echo -e "\e[38;5;6m| $$  \__/  /$$$$$$ | $$  | $$| $$  \__/| $$  \ $$| $$  \ $$| $$  \__/\e[0m"
+echo -e "\e[38;5;6m| $$       /$$__  $$| $$  | $$| $$ /$$$$| $$$$$$$$| $$$$$$$/|  $$$$$$ \e[0m"
+echo -e "\e[38;5;6m| $$      | $$  \ $$| $$  | $$| $$|_  $$| $$__  $$| $$__  $$ \____  $$\e[0m"
+echo -e "\e[38;5;6m| $$    $$| $$  | $$| $$  | $$| $$  \ $$| $$  | $$| $$  \ $$ /$$  \ $$\e[0m"
+echo -e "\e[38;5;6m|  $$$$$$/|  $$$$$$/|  $$$$$$/|  $$$$$$/| $$  | $$| $$  | $$|  $$$$$$/\e[0m"
+echo -e "\e[38;5;6m \______/  \______/  \______/  \______/ |__/  |__/|__/  |__/ \______/ \e[0m"
 echo ""
-echo -e "\e[38;5;6mUnmanned Navigationally-Cooperative Low-Expense Disposable Reusable Expeditionary Warfare Underwater Vehicle\e[0m"
+echo -e "\e[38;5;6mBYU FROST LAB - COOPERATIVE UNDERWATER GROUP OF AUTONOMOUS ROBOTIC SYSTEMS\e[0m"
 echo ""
 
 cd ~/microros_ws
