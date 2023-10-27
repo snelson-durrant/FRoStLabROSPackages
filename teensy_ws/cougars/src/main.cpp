@@ -1,11 +1,11 @@
-#include "PID.h"
-#include "echo_srv.cpp"
-#include "gps_srv.cpp"
-#include "humidity_pub.h"
-#include "imu_pub.cpp"
-#include "leak_pub.cpp"
-#include "pressure_pub.cpp"
-#include "voltage_pub.cpp"
+#include "pid_controller.hpp"
+#include "echo_srv.hpp"
+#include "gps_srv.hpp"
+#include "humidity_pub.hpp"
+#include "imu_pub.hpp"
+#include "leak_pub.hpp"
+#include "pressure_pub.hpp"
+#include "voltage_pub.hpp"
 
 #include <Servo.h>
 #include <frost_interfaces/msg/nav.h>

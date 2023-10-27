@@ -1,4 +1,4 @@
-#include "service.cpp"
+#include "service.hpp"
 #include <SoftwareSerial.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include <frost_interfaces/srv/get_gps.h>

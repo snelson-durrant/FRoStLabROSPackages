@@ -1,4 +1,4 @@
-#include "publisher.cpp"
+#include "publisher.hpp"
 #include <SoftwareSerial.h>
 #include <frost_interfaces/msg/echo.h>
 #include <ping1d.h>

@@ -28,7 +28,9 @@ public:
   virtual void setup(rcl_node_t node) = 0;
   virtual void publish() = 0;
 
-  void destroy(rcl_node_t node) { RCCHECK(rcl_publisher_fini(&publisher, &node)); }
+  void destroy(rcl_node_t node) {
+    RCCHECK(rcl_publisher_fini(&publisher, &node));
+  }
 
 protected:
   rcl_publisher_t publisher;

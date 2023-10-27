@@ -1,4 +1,4 @@
-#include "publisher.cpp"
+#include "publisher.hpp"
 #include <frost_interfaces/msg/leak.h>
 #include <std_msgs/msg/bool.h>
 

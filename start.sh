@@ -9,7 +9,7 @@ echo -e "\e[38;5;6m| $$    $$| $$  | $$| $$  | $$| $$  \ $$| $$  | $$| $$  \ $$ 
 echo -e "\e[38;5;6m|  $$$$$$/|  $$$$$$/|  $$$$$$/|  $$$$$$/| $$  | $$| $$  | $$|  $$$$$$/\e[0m"
 echo -e "\e[38;5;6m \______/  \______/  \______/  \______/ |__/  |__/|__/  |__/ \______/ \e[0m"
 echo ""
-echo -e "\e[38;5;6mBYU FROST LAB - COOPERATIVE UNDERWATER GROUP OF AUTONOMOUS ROBOTIC SYSTEMS\e[0m"
+echo -e "\e[38;5;6mBYU FROST LAB - CONFIGURABLE UNDERWATER GROUP OF AUTONOMOUS ROBOTIC SYSTEMS\e[0m"
 echo ""
 
 cd ~/microros_ws
