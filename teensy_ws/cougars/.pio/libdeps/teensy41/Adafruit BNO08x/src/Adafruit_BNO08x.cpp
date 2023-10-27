@@ -45,7 +45,6 @@ static Adafruit_I2CDevice *i2c_dev = NULL; ///< Pointer to I2C bus interface
 static HardwareSerial *uart_dev = NULL;
 
 static sh2_SensorValue_t *_sensor_value = NULL;
-sh2_SensorValue_t hack_value;
 static bool _reset_occurred = false;
 
 static int i2chal_write(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len);
@@ -240,9 +239,6 @@ bool Adafruit_BNO08x::getSensorEvent(sh2_SensorValue_t *value) {
 
   value->timestamp = 0;
 
-  //////////////////////////////////////////
-  // I THINK THIS IS THE ISSUE RIGHT HERE //
-  //////////////////////////////////////////
   sh2_service();
 
   if (value->timestamp == 0 && value->sensorId != SH2_GYRO_INTEGRATED_RV) {
@@ -657,19 +653,12 @@ static void hal_callback(void *cookie, sh2_AsyncEvent_t *pEvent) {
 static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
   int rc;
 
-  rc = sh2_decodeSensorEvent(_sensor_value, event);
+  // Serial.println("Got an event!");
 
+  rc = sh2_decodeSensorEvent(_sensor_value, event);
   if (rc != SH2_OK) {
-    Serial5.println("BNO08x - Error decoding sensor event");
+    Serial.println("BNO08x - Error decoding sensor event");
     _sensor_value->timestamp = 0;
     return;
   }
-
-  hack_value = *_sensor_value;
-}
-
-sh2_SensorValue_t Adafruit_BNO08x::getHackSensorEvent() {
-  
-  sh2_service();
-  return hack_value;
 }

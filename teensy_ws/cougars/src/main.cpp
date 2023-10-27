@@ -1,7 +1,7 @@
 #include "PID.h"
 #include "echo_srv.cpp"
 #include "gps_srv.cpp"
-#include "humidity_pub.hpp"
+#include "humidity_pub.h"
 #include "imu_pub.cpp"
 #include "leak_pub.cpp"
 #include "pressure_pub.cpp"

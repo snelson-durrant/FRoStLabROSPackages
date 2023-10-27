@@ -1,4 +1,4 @@
-#include "humidity.hpp"
+#include "humidity_pub.h"
 
 #define DHTPIN 4
 #define DHTTYPE DHT22
