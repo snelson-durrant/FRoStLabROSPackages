@@ -29,6 +29,6 @@ void GPSSrv::respond(const void *request_msg, void *response_msg) {
   res_in->header.stamp.nanosec = rmw_uros_epoch_nanos();
 }
 
-virtual void GPSSrv::destroy(rcl_node_t node) { 
+void GPSSrv::destroy(rcl_node_t node) { 
   RCCHECK(rcl_service_fini(&service, &node));
 }
