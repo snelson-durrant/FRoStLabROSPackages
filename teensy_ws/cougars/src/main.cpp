@@ -373,6 +373,7 @@ void loop() {
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
   case WAITING_AGENT:
+    Serial5.println("test");
     EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
                                         ? AGENT_AVAILABLE
                                         : WAITING_AGENT;);
@@ -403,4 +404,7 @@ void loop() {
   default:
     break;
   }
+
+  Serial5.
+
 }
