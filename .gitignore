@@ -1,6 +1,7 @@
 /*
 *.vscode
 !/.gitignore
+!/networkconfig
 !/*.sh
 !/ros2_ws/
 /ros2_ws/*
