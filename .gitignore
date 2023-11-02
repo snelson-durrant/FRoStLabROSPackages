@@ -11,6 +11,7 @@
 !/teensy_ws/*.sh
 !/teensy_ws/cougars/
 /teensy_ws/cougars/*
+/teensy_ws/cougars/
 !/teensy_ws/cougars/platformio.ini
 !/teensy_ws/cougars/custom.meta
 !/teensy_ws/cougars/src/
