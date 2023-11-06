@@ -4,9 +4,14 @@
 #include <PID.h>
 #include <Servo.h>
 #define SERVO_PIN1 9
+#define SERVO_PIN2 10
+#define SERVO_PIN3 11
 #define THRUSTER_PIN 10
 Servo my_servo;
 Servo my_thruster; 
+Servo my_servo12;
+Servo my_servo22;
+Servo my_servo32;
 // PID Objects
 #define HEADING_P 0.6
 #define HEADING_I 0.05
@@ -86,12 +91,12 @@ int compute_heading(float heading_curr){          //TODO: Make the parameter a p
   }
 
 void PID_loop(){
-  int servo2_angle = compute_heading(returnYaw());      //TODO: make this with pointers
+  int servo2_angle = 1; // compute_heading(returnYaw());      //TODO: make this with pointers
   // Serial.print("Servo Angle: ");
   //Serial.println(servo1_angle);
-  my_servo.write(servo1_angle);
+  my_servo.write(servo2_angle);
 
-  int servo2_angle = compute_depth(returnPitch());
+  servo2_angle = 1; //compute_depth(returnPitch());
   my_servo22.write(servo2_angle);
   static int servo3_angle;
   if(servo2_angle > 90){
