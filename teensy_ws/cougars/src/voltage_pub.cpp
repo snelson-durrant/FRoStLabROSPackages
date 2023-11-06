@@ -30,3 +30,7 @@ void VoltagePub::publish() {
     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
   }
 }
+
+float VoltagePub::get_voltage() {
+  return ina260.readBusVoltage();
+}

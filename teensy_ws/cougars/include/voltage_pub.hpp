@@ -11,6 +11,7 @@ class VoltagePub : Publisher {
 public:
   void setup(rcl_node_t node);
   void publish();
+  float get_voltage();
   using Publisher::destroy;
 
 private:
