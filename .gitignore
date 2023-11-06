@@ -16,12 +16,10 @@
 !/teensy_ws/cougars/custom.meta
 !/teensy_ws/cougars/src/
 !/teensy_ws/cougars/extra_packages/
-!/teensy_ws/cougars/.pio/
 !/teensy_ws/cougars/include/
 !/teensy_ws/sensor_test/
 /teensy_ws/sensor_test/*
 !/teensy_ws/sensor_test/platformio.ini
 !/teensy_ws/sensor_test/src/
-!/teensy_ws/sensor_test/.pio/
 !/teensy_ws/sensor_test/include/
 
