@@ -1,8 +1,6 @@
 #include "MS5837.h"
 #include <Wire.h>
 
-#define Wire Wire1
-
 #define MS5837_ADDR               0x76  
 #define MS5837_RESET              0x1E
 #define MS5837_ADC_READ           0x00
