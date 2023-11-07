@@ -41,10 +41,8 @@ sh2_SensorValue_t sensorValue;
 float linear_accel_x;
 int n_time = 0;
 double velocity = 0;
-float prev_accel_1 = 0;
-float prev_accel_2 = 0;
-unsigned long prev_time_1 = 0;
-unsigned long prev_time_2 = 0;
+float prev_accel = 0;
+unsigned long prev_time = 0;
 
 float returnYaw(){return ypr.yaw + 180.00;}
 double returnVel(){return velocity;}
@@ -129,23 +127,16 @@ void PID_loop(){
 
 void calculate_velocity() { // Could make function with pointers so it can
                             // calculate all velocities
-  if (n_time < 2) {
-    prev_time_2 = prev_time_1;
-    prev_time_1 = micros();
-    prev_accel_2 = prev_accel_1;
-    prev_accel_1 = linear_accel_x;
+  if (n_time < 1) {
+    prev_time = micros();
+    prev_accel = linear_accel_x;
     n_time++;
   } else {
     unsigned long current_time = micros();
-    float delta_time = (current_time - prev_time_2) * 1e-6;
-    velocity += (prev_accel_2 + 4.0 * prev_accel_1 + linear_accel_x) *
-                delta_time / 6.0;
-    // velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;
-    // //trapezoidal prev_time = micros(); prev_accel = linear_accel_x;
-    prev_time_2 = prev_time_1;
-    prev_time_1 = current_time;
-    prev_accel_2 = prev_accel_1;
-    prev_accel_1 = linear_accel_x;
+    float delta_time = (current_time - prev_time) * 1e-6;
+    velocity += (prev_accel + linear_accel_x) * 0.50 * delta_time;
+    prev_time = current_time;
+    prev_accel = linear_accel_x;
     Serial.println("Velocity: ");
     Serial.print(velocity*1000);
     Serial.print("\t");
@@ -153,6 +144,40 @@ void calculate_velocity() { // Could make function with pointers so it can
     Serial.print("\t");
     Serial.println(delta_time*1000);
   }
+}
+
+
+float calculated_velocity = 0.0;
+unsigned long previous_time = 0;
+float previous_acceleration = 0.0;
+unsigned long prev_time_1 = 0;
+float prev_accel_1 = 0.0;
+bool first_time = false;
+
+void calculate_velocity_simp() {
+    if (!first_time) {
+        previous_time = micros();
+        previous_acceleration = linear_accel_x;
+        first_time = true;
+    } else {
+        unsigned long current_time = micros();
+        float delta_time = (current_time - previous_time) * 1e-6;
+
+        // Simpson's 1/3 rule for numerical integration
+        calculated_velocity += (prev_accel_1 + 4.0 * previous_acceleration + linear_accel_x) * delta_time / 6.0;
+
+        prev_time_1 = previous_time;
+        previous_time = current_time;
+        prev_accel_1 = previous_acceleration;
+        previous_acceleration = linear_accel_x;
+
+        Serial.println("Velocity Simp: ");
+        Serial.print(calculated_velocity*1000);
+        Serial.print("\t");
+        Serial.print(linear_accel_x*1000);
+        Serial.print("\t");
+        Serial.println(delta_time*1000);
+    }
 }
 
 // float filter_accelerometer(float accelx, float rawaccel){
@@ -217,7 +242,9 @@ long now;
 static long last =0;
 
 void loop_imu() {
-  PID_loop();
+  //PID_loop();
+  calculate_velocity();
+  calculate_velocity_simp();
   if (bno08x.wasReset()) {
     Serial.print("sensor was reset ");
     setReports();

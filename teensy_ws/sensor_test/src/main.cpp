@@ -18,9 +18,9 @@ void setup() {
   //setup_leak();
   //setup_echo();
   //setup_voltage();
-  setup_servo();
+  //setup_servo();
   //setup_gps();
-  //setup_imu();
+  setup_imu();
   //setup_humidity_calibrate();
   //setup_pressure_calibrate();
 }
@@ -31,8 +31,8 @@ void loop() {
   //loop_leak();
   //loop_echo();
   //loop_voltage();
-  loop_servo();
+  //loop_servo();
   //loop_gps();
-  //loop_imu();
+  loop_imu();
   //loop_calibrate();
 }

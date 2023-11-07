@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sudo rm /etc/netplan/*
 sudo cp ~/networkconfig/10-inhand-config.yaml /etc/netplan
 

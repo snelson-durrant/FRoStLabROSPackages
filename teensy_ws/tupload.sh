@@ -3,4 +3,4 @@
 cd ~/teensy_ws/sensor_test/.pio/build/teensy41
 teensy_loader_cli --mcu=TEENSY41 -sv firmware.hex
 
-# screen /dev/ttyACM0 115200
+screen /dev/ttyACM0 115200
