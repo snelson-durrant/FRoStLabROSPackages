@@ -2,7 +2,7 @@
 #include "echo_srv.hpp"
 #include "gps_srv.hpp"
 #include "humidity_pub.hpp"
-#include "imu_pub.hpp"
+#include "imu_pub_new.hpp"
 #include "leak_pub.hpp"
 #include "pressure_pub.hpp"
 #include "voltage_pub.hpp"
@@ -67,7 +67,7 @@ static VoltagePub voltage_pub;
 static HumidityPub humidity_pub;
 static LeakPub leak_pub;
 static PressurePub pressure_pub;
-static IMUPub imu_pub;
+static IMUPubNew imu_pub;
 
 // service objects
 static GPSSrv gps_srv;
@@ -141,10 +141,10 @@ void run_pid() {
 
     // use custom functions from imu_pub and depth_pub to get values
 
-    int servo1_angle =
-        compute_heading(pid_request_msg->yaw, imu_pub.returnYaw());
-    int thruster_speed =
-        Velocity.compute(pid_request_msg->velocity, imu_pub.returnVel());
+    int servo1_angle = 0;
+        // compute_heading(pid_request_msg->yaw, imu_pub.returnYaw());
+    int thruster_speed = 0;
+        // Velocity.compute(pid_request_msg->velocity, imu_pub.returnVel());
 
     // TODO: test thruster using this code
     int servo2_angle = map(thruster_speed, 0, 100, 25, 165);
@@ -222,10 +222,8 @@ void timer_pub_callback(rcl_timer_t *timer, int64_t last_call_time) {
     voltage_pub.publish();
     humidity_pub.publish();
     leak_pub.publish();
-    // pressure_pub.publish();
-    // imu_pub.publish();
-    // RCSOFTCHECK(rcl_publish(&nav_publisher, &nav_msg, NULL));
-    // RCSOFTCHECK(rcl_publish(&pid_publisher, &pid_actual_msg, NULL));
+    pressure_pub.publish();
+    imu_pub.publish();
   }
 }
 
@@ -276,8 +274,8 @@ bool create_entities() {
   voltage_pub.setup(node);
   humidity_pub.setup(node);
   leak_pub.setup(node);
-  // pressure_pub.setup(node);
-  // imu_pub.setup(node);
+  pressure_pub.setup(node);
+  imu_pub.setup(node);
 
   // create services
   gps_srv.setup(node);
@@ -287,16 +285,6 @@ bool create_entities() {
   RCCHECK(rclc_subscription_init_default(
       &subscriber, &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID), "pid_request"));
-
-  // create publishers
-  // RCCHECK(rclc_publisher_init_best_effort(
-  //     &pid_publisher, &node,
-  //     ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, PID),
-  //     "pid_actual"));
-  // RCCHECK(rclc_publisher_init_best_effort(
-  //     &nav_publisher, &node,
-  //     ROSIDL_GET_MSG_TYPE_SUPPORT(frost_interfaces, msg, Nav),
-  //     "nav_commands"));
 
   // create timer (handles periodic publications)
   RCCHECK(rclc_timer_init_default(
@@ -341,8 +329,8 @@ void destroy_entities() {
   voltage_pub.destroy(node);
   humidity_pub.destroy(node);
   leak_pub.destroy(node);
-  // pressure_pub.destroy(node);
-  // imu_pub.destroy(node);
+  pressure_pub.destroy(node);
+  imu_pub.destroy(node);
 
   // destroy services
   gps_srv.destroy(node);
@@ -350,8 +338,6 @@ void destroy_entities() {
 
   // destroy everything else
   rcl_subscription_fini(&subscriber, &node);
-  // rcl_publisher_fini(&pid_publisher, &node);
-  // rcl_publisher_fini(&nav_publisher, &node);
   rcl_timer_fini(&timer_pub);
   rcl_timer_fini(&timer_pid);
   rclc_executor_fini(&executor);
@@ -363,7 +349,10 @@ void setup() {
 
   Serial.begin(BAUD_RATE);
   set_microros_serial_transports(Serial);
+  Serial5.begin(115200);
   pin_setup();
+
+  Serial5.println("setup");
 
   state = WAITING_AGENT;
 }
