@@ -9,8 +9,7 @@
 class IMUPubNew : Publisher {
 
 public:
-
-    void setup();
+  void setup(rcl_node_t node);
   void imu_setup();
   void imu_update();
   void publish();
