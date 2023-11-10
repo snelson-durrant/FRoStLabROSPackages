@@ -103,13 +103,13 @@ static void error_loop() {
   }
 }
 
-void bluetooth_report_voltage_and_calibration() {
+//prints the voltage and calibration data over bluetooth so we can view and debug with our phones
+void bluetooth_report() {
     Serial5.print("Voltage: ");
     Serial5.println(voltage_pub.get_voltage());
     Serial5.print("calibration: ")
     Serial5.println("oopsies! we have no calibration data. :| ");
 }
-
 
 
 // TODO: Can we add this to the PID object?
@@ -382,7 +382,7 @@ void loop() {
   // state machine to manage connecting and disconnecting the micro-ROS agent
   switch (state) {
   case WAITING_AGENT:
-    bluetooth_report_voltage_and_calibration();
+    bluetooth_report();
     EXECUTE_EVERY_N_MS(500, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1))
                                         ? AGENT_AVAILABLE
                                         : WAITING_AGENT;);
