@@ -23,6 +23,8 @@ class MyDriver : public SeatracDriver
         req.target   = target;
         req.pingType = pingType;
         this->send(sizeof(req), (const uint8_t*)&req);
+        std::cout << "Ping sent to beacon with ID: " << target << std::endl << std::flush;
+
     }
 
     // this method is called on any message returned by the beacon.
