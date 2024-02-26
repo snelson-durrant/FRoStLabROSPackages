@@ -22,7 +22,7 @@ public:
         this->create_publisher<std_msgs::msg::String>("modem_data", 10);
     timer_ = this->create_wall_timer(
         5000ms, std::bind(&ModemDataPublisher::timer_callback, this));
-    this->ping_beacon(BEACON_ID_10);
+    //this->ping_beacon(BEACON_ID_10);
   }
 
   void ping_beacon(BID_E target, AMSGTYPE_E pingType = MSG_REQU) {
@@ -35,32 +35,52 @@ public:
   // this method is called on any message returned by the beacon.
   void on_message(CID_E msgId, const std::vector<uint8_t> &data) {
     switch (msgId) {
-    default:
-      break;
-    case CID_PING_ERROR: {
-      messages::PingError response;
-      response = data;
+      default:
+        break;
 
-      auto message = std_msgs::msg::String();
-      message.data = "ERROR: No modem ping response detected";
-      RCLCPP_INFO(this->get_logger(), message.data.c_str());
-      publisher_->publish(message);
+      case CID_DAT_RECEIVE:
+        {
+          //std::cout << "Got message : " << msgId << std::endl << std::flush;
+      
+          messages::DataReceive response;     //struct that contains response fields
+          response = data;                    //operator overload fills in response struct with correct data
+          //std::cout << response << std::endl; //operator overload prints out response data
 
-      this->ping_beacon(response.beaconId);
-    } break;
-    case CID_PING_RESP: {
-      messages::PingResp response;
-      response = data;
+          //TODO: add code to convert response into ros message here
+        }
+          break;
+      case CID_DAT_ERROR:
+        {
+          messages::DataError response;
+          response = data;
+          //std::cout << response << std::endl;
+        }
+        break;
+      
+      case CID_PING_ERROR: {
+        messages::PingError response;
+        response = data;
 
-      auto message = std_msgs::msg::String();
-      message.data = "TODO: Add modem ping message type here";
-      RCLCPP_INFO(this->get_logger(), message.data.c_str());
-      publisher_->publish(message);
+        auto message = std_msgs::msg::String();
+        message.data = "ERROR: No modem ping response detected";
+        RCLCPP_INFO(this->get_logger(), message.data.c_str());
+        publisher_->publish(message);
 
-      this->ping_beacon(response.acoFix.srcId);
-    } break;
-    case CID_STATUS:
-      break;
+        //this->ping_beacon(response.beaconId);
+      } break;
+      case CID_PING_RESP: {
+        messages::PingResp response;
+        response = data;
+
+        auto message = std_msgs::msg::String();
+        message.data = "TODO: Add modem ping message type here";
+        RCLCPP_INFO(this->get_logger(), message.data.c_str());
+        publisher_->publish(message);
+
+        //this->ping_beacon(response.acoFix.srcId);
+      } break;
+      case CID_STATUS:
+        break;
     }
   }
 
